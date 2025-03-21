@@ -135,57 +135,57 @@ export default function RegistrationsPage() {
 
   return (
     <>
-    <div className="container mx-auto py-8 px-4">
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">My Registrations</h1>
-        <div className="grid gap-4">
-          {registrations.map((registration) => {
-            const eventDate = new Date(registration.event.date);
-            const isPast = eventDate < new Date();
+      <div className="container mx-auto py-8 px-4">
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold">My Registrations</h1>
+          <div className="grid gap-4">
+            {registrations.map((registration) => {
+              const eventDate = new Date(registration.event.date);
+              const isPast = eventDate < new Date();
 
-            return (
-              <Card key={registration._id} className="overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row justify-between gap-4">
-                    <div className="space-y-4">
-                      <h2 className="text-xl font-semibold">{registration.event.title}</h2>
-                      <p className="text-muted-foreground line-clamp-2">{registration.event.description}</p>
+              return (
+                <Card key={registration._id} className="overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col md:flex-row justify-between gap-4">
+                      <div className="space-y-4">
+                        <h2 className="text-xl font-semibold">{registration.event.title}</h2>
+                        <p className="text-muted-foreground line-clamp-2">{registration.event.description}</p>
 
-                      <div className="grid gap-3">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <CalendarDays className="h-4 w-4" />
-                          <span>{format(eventDate, "EEEE, MMMM d, yyyy 'at' h:mm a")}</span>
-                        </div>
+                        <div className="grid gap-3">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <CalendarDays className="h-4 w-4" />
+                            <span>{format(eventDate, "EEEE, MMMM d, yyyy 'at' h:mm a")}</span>
+                          </div>
 
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          <span>{registration.event.location}</span>
-                        </div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <MapPin className="h-4 w-4" />
+                            <span>{registration.event.location}</span>
+                          </div>
 
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Users className="h-4 w-4" />
-                          <span>{`${registration.event.capacity - 1} spots left`}</span>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Users className="h-4 w-4" />
+                            <span>{`${registration.event.capacity - 1} spots left`}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center">
-                      <Button
-                        onClick={() => registerForEvent(registration.event._id)}
-                        disabled={isPast || registration.status !== "pending"}
-                      >
-                        {registration.status === "pending" ? "Apply Again" : registration.status}
-                      </Button>
+                      <div className="flex items-center">
+                        <Button
+                          onClick={() => registerForEvent(registration.event._id)}
+                          disabled={isPast || registration.status !== "pending"}
+                        >
+                          {registration.status === "pending" ? "Apply Again" : registration.status}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
-    <Footer/>
+      <Footer />
     </>
   );
 }

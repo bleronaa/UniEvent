@@ -150,14 +150,17 @@ export default function CreateEventPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Kategoria</Label>
-              <Input
-                id="category"
-                name="category"
-                placeholder="Kategoria e eventit"
-                required
-              />
-            </div>
+            <Label htmlFor="category">Kategoria</Label>
+            <select
+              id="category"
+              name="category"
+              required
+              className="w-full p-2 border border-gray-300 rounded-md"
+            >
+              <option value="Inxh.Kompjuterike">Inxh.Kompjuterike</option>
+              <option value="Inxh.Mekanike">Inxh.Mekanike</option>
+            </select>
+          </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Duke u krijuar..." : "Krijo eventin"}

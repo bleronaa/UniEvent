@@ -1,90 +1,48 @@
-import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import dbConnect from '@/lib/db';
-import Event from '../models/Events';
-import Registration from '../models/Registrations';
+import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Registrations from "../models/Registrations"; // Make sure the path is correct
+import User from "../models/User"; // If you need to use User model for more specific logic
+import Events from "../models/Events"; // Assuming you have an Event model
 
-const SECRET_KEY = process.env.JWT_SECRET!; 
-
-// Function to extract user ID from JWT
-function getUserIdFromToken(request: Request): string | null {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-
-  const token = authHeader.split(' ')[1]; // Extract token after 'Bearer'
-  try {
-    const decoded = jwt.verify(token, SECRET_KEY) as { userId: string };
-    return decoded.userId;
-  } catch (error) {
-    console.error('JWT Verification Error:', error);
-    return null;
-  }
+// 1. OPTIONS (For preflight requests)
+export async function OPTIONS() {
+  return NextResponse.json(
+    {},
+    {
+      status: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "http://localhost:3000", // Correct origin
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    }
+  );
 }
 
-export async function POST(request: Request) {
-  try {
-    await dbConnect();
-
-    // Extract user ID from the token
-    const userId = getUserIdFromToken(request);
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { eventId } = await request.json();
-
-    // Check if event exists
-    const event = await Event.findById(eventId);
-    if (!event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
-    }
-    
-     // Check if the user has already registered for this event
-     const existingRegistration = await Registration.findOne({ user: userId, event: eventId });
-     if (existingRegistration) {
-       return NextResponse.json({ error: 'You have already applied for this event.' }, { status: 400 });
-     }
-
-    // Check capacity
-    const registrationCount = await Registration.countDocuments({ event: eventId });
-    if (event.capacity && registrationCount >= event.capacity) {
-      return NextResponse.json({ error: 'Event is full' }, { status: 400 });
-    }
-
-    // Create registration
-    const registration = await Registration.create({
-      user: userId,
-      event: eventId,
-      status: 'confirmed'
-    });
-
-    return NextResponse.json(registration, { status: 201 });
-  } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Failed to register for event' }, { status: 500 });
-  }
-}
-
+// 2. GET: Fetch all registrations
 export async function GET(request: Request) {
   try {
     await dbConnect();
 
-    // Extract user ID from the token
-    const userId = getUserIdFromToken(request);
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // DEBUG: Log the origin of the request
+    console.log("Request origin:", request.headers.get("origin"));
 
-    // Get user's registrations
-    const registrations = await Registration.find({ user: userId })
-      .populate('event')
-      .sort({ createdAt: -1 });
+    // Fetch all registrations, populating user and event details
+    const registrations = await Registrations.find()
+      .populate("user", "name email") // Populate user data (you can add more fields if needed)
+      .populate("event", "title date") // Populate event data
+      .sort({ createdAt: -1 }); // Sort registrations by creation date, latest first
 
-    return NextResponse.json(registrations);
+    return NextResponse.json(registrations, {
+      headers: {
+        "Access-Control-Allow-Origin": "http://localhost:3000", // Adjust origin if needed
+      },
+    });
   } catch (error) {
-    console.error('Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch registrations' }, { status: 500 });
+    console.error("Error fetching registrations:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch registrations" },
+      { status: 500 }
+    );
   }
 }

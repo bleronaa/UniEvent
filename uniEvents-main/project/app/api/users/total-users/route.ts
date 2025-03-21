@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
-import Events from "../../models/Events";
+import User from "../../models/User";
 
 // 1. OPTIONS: për preflight requests
 export async function OPTIONS(request: Request) {
@@ -13,7 +13,7 @@ export async function OPTIONS(request: Request) {
       status: 200,
       headers: {
         // Hiq “/” në fund
-        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Origin": "http://localhost:3000/",
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       },
@@ -30,10 +30,10 @@ export async function GET(request: Request) {
     const incomingOrigin = request.headers.get("origin");
     console.log("GET origin:", incomingOrigin);
 
-    const totalEvents = await Events.countDocuments();
+    const totalUsers = await User.countDocuments();
 
     return NextResponse.json(
-      { totalEvents },
+      { totalUsers },
       {
         headers: {
           // Hiq “/” këtu gjithashtu
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     );
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch total events" },
+      { error: "Failed to fetch total users" },
       { status: 500 }
     );
   }
