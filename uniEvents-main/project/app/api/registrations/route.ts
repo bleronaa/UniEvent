@@ -24,18 +24,14 @@ export async function GET(request: Request) {
   try {
     await dbConnect();
 
-    // DEBUG: Log the origin of the request
-    console.log("Request origin:", request.headers.get("origin"));
-
-    // Fetch all registrations, populating user and event details
     const registrations = await Registrations.find()
-      .populate("user", "name email") // Populate user data (you can add more fields if needed)
-      .populate("event", "title date") // Populate event data
-      .sort({ createdAt: -1 }); // Sort registrations by creation date, latest first
+      .populate("user", "name email")
+      .populate("event", "title description date location capacity category") // Populate all required fields
+      .sort({ createdAt: -1 });
 
     return NextResponse.json(registrations, {
       headers: {
-        "Access-Control-Allow-Origin": "http://localhost:3000", // Adjust origin if needed
+        "Access-Control-Allow-Origin": "http://localhost:3000",
       },
     });
   } catch (error) {
