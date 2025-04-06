@@ -8,7 +8,7 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { Calendar, LogIn, LogOut, UserPlus } from "lucide-react";
+import { Calendar, LogIn, LogOut, UserPlus, UserCircle } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth";
@@ -57,9 +57,12 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             {user ? (
               <>
-                <span className="text-sm text-muted-foreground">
-                  {user.name}
-                </span>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/profile">
+                    <UserCircle className="h-4 w-4 mr-2" />
+                    {user.name}
+                  </Link>
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => logout()}>
                   <LogOut className="h-4 w-4 mr-2" />
                   Dil
