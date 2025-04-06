@@ -25,7 +25,8 @@ export async function GET(request: Request) {
     // DEBUG: Log the origin coming from the browser
     console.log("Request origin:", request.headers.get("origin"));
 
-    const events = await Events.find({}).sort({ date: 1 });
+    const events = await Events.find({}).sort({ date: 1 })
+    .populate("organizer", "name") 
 
     return NextResponse.json(events, {
       headers: {

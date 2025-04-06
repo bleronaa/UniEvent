@@ -82,7 +82,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-12">
           <div className="flex flex-col items-center gap-8">
             <div className="flex flex-col md:flex-row justify-between items-center w-full max-w-6xl gap-4">
-              <h1 className="text-4xl font-bold text-gray-900">Të gjitha eventet</h1>
+              <h1 className="text-4xl font-bold text-gray-900">Shfleto të gjitha eventet</h1>
               {user && (
                 <div className="flex gap-4">
                   <Button className="bg-primary hover:bg-primary/90" asChild>

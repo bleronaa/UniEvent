@@ -47,7 +47,7 @@ export default function RegistrationsPage() {
           return;
         }
 
-        const res = await fetch("/api/registrations", {
+        const res = await fetch("/api/registrations/", {
           headers: authHeader,
         });
 
