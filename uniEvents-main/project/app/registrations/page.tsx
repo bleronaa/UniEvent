@@ -103,9 +103,6 @@ export default function RegistrationsPage() {
     }
   }
 
-  const handleClosePopup = () => {
-    setShowPopup(false);
-  };
 
   if (loading) {
     return (
@@ -140,6 +137,8 @@ export default function RegistrationsPage() {
           <h1 className="text-3xl font-bold">My Registrations</h1>
           <div className="grid gap-4">
             {registrations.map((registration) => {
+              if (!registration.event) return null; // Skip if event is null or undefined
+
               const eventDate = new Date(registration.event.date);
               const isPast = eventDate < new Date();
 
@@ -182,10 +181,11 @@ export default function RegistrationsPage() {
                 </Card>
               );
             })}
+
           </div>
         </div>
       </div>
-      <Footer />
+
     </>
   );
 }

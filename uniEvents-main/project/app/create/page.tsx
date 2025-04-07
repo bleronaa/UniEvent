@@ -81,6 +81,20 @@ export default function CreateEventPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Kategoria</Label>
+            <select
+              id="category"
+              name="category"
+              required
+              className="w-full p-2 border border-gray-300 rounded-md"
+            >
+              <option value="Inxh.Kompjuterike">Inxh.Kompjuterike</option>
+              <option value="Inxh.Mekanike">Inxh.Mekanike</option>
+            </select>
+          </div>
+
             <div className="space-y-2">
               <Label htmlFor="title">Titulli i eventit</Label>
               <Input
@@ -90,6 +104,8 @@ export default function CreateEventPage() {
                 required
               />
             </div>
+
+            
             
             <div className="space-y-2">
               <Label htmlFor="description">Përshkrimi</Label>
@@ -145,22 +161,10 @@ export default function CreateEventPage() {
                 type="number"
                 min="1"
                 placeholder="Numri maksimal i pjesëmarrësve"
-                required
               />
             </div>
 
-            <div className="space-y-2">
-            <Label htmlFor="category">Kategoria</Label>
-            <select
-              id="category"
-              name="category"
-              required
-              className="w-full p-2 border border-gray-300 rounded-md"
-            >
-              <option value="Inxh.Kompjuterike">Inxh.Kompjuterike</option>
-              <option value="Inxh.Mekanike">Inxh.Mekanike</option>
-            </select>
-          </div>
+            
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Duke u krijuar..." : "Krijo eventin"}

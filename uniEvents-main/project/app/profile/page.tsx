@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserCircle, Mail, BookOpen, Building2, PencilLine, Trash2 } from "lucide-react";
+import { UserCircle, Mail, BookOpen, Building2, PencilLine, Trash2, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
 
 // Definimi i tipit për eventet
@@ -17,7 +17,7 @@ interface Event {
 }
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -29,7 +29,7 @@ export default function ProfilePage() {
     const fetchEvents = async () => {
       if (user?.id) {
         try {
-            const response = await fetch(`/api/events/eventsuser?user-id=${user.id}`);
+          const response = await fetch(`/api/events/eventsuser?user-id=${user.id}`);
           if (response.ok) {
             const data = await response.json();
             setEvents(data);
@@ -54,13 +54,13 @@ export default function ProfilePage() {
   };
 
   const handleDelete = async (eventId: string) => {
-    // Funksioni për fshirjen e eventeve
     try {
-      const response = await fetch(`/api/events/${eventId}`, {
+      const response = await fetch(`/api/events/eventsuser?eventId=${eventId}`, {
         method: 'DELETE',
       });
+  
       if (response.ok) {
-        setEvents(events.filter(event => event._id !== eventId)); // Përshtatja e listës pas fshirjes
+        setEvents(events.filter(event => event._id !== eventId));
       } else {
         console.error("Failed to delete event");
       }
@@ -68,6 +68,10 @@ export default function ProfilePage() {
       console.error("Error deleting event:", error);
     }
   };
+  
+
+  
+  
 
   if (!user) {
     return (
@@ -92,9 +96,36 @@ export default function ProfilePage() {
     return colors[role] || "bg-gray-100 text-gray-800";
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsEditing(false);
+  
+const handleSubmit = async () => {
+  const response = await fetch("/api/users/profile", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-id": user?.id || "", // merre ID nga zustand
+    },
+    body: JSON.stringify({
+      name: formData.name,
+      email: formData.email,
+    }),
+  });
+
+  if (response.ok) {
+    const updatedUser = await response.json();
+    updateUser(updatedUser); 
+    
+  }
+};
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -185,47 +216,64 @@ export default function ProfilePage() {
       <div className="mt-8">
         <Card>
           <CardHeader>
-            <CardTitle>Your Created Events</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Your Created Events
+            </CardTitle>
+            <CardDescription>
+              Manage and track your created events
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {events.length === 0 ? (
-              <p>No events created yet.</p>
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No events created yet.</p>
+                <Button className="mt-4" variant="outline">
+                  Create Your First Event
+                </Button>
+              </div>
             ) : (
-              <ul>
+              <div className="space-y-4">
                 {events.map((event) => (
-                  <li key={event._id} className="py-2">
-                    <h4 className="font-medium">{event.title}</h4>
-                    <p className="text-sm text-muted-foreground">{event.date}</p>
-
-                     {/* Kontrollo nëse eventi ka kaluar */}
-                  {isEventPast(event.date) ? (
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        disabled 
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        onClick={() => handleDelete(event._id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      onClick={() => console.log(`Editing event ${event._id}`)}
-                    >
-                      <PencilLine className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                  )}
-                  </li>
+                  <Card key={event._id} className="bg-muted/50">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <h4 className="font-semibold text-lg">{event.title}</h4>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <time className="text-sm">{formatDate(event.date)}</time>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                        
+                            <div className="space-x-2">
+                              {/* <Button 
+                                variant="outline"
+                                size="sm"
+                                onClick={() => console.log(`Editing event ${event._id}`)}
+                              >
+                                <PencilLine className="h-4 w-4 mr-2" />
+                                Edit
+                              </Button> */}
+                              <Button 
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDelete(event._id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </Button>
+                            </div>
+                        
+                        </div>
+                      </div>
+                      
+                    </CardContent>
+                  </Card>
                 ))}
-              </ul>
+              </div>
             )}
           </CardContent>
         </Card>
