@@ -33,6 +33,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [showMore, setShowMore] = useState(false);
+
 
   useEffect(() => {
     async function fetchEvents() {
@@ -64,9 +66,27 @@ export default function Home() {
             <p className="p-regular-20">
               Organizo dhe eksploro aktivitete që lidhin studentët, klubet dhe fakultetet, duke sjellë ide dhe mundësi të reja për të gjithë komunitetin universitar.
             </p>
-            <Button size="lg" asChild className="button w-full sm:w-fit">
-              <Link href="#events">Zbulo më Shumë</Link>
+            {showMore && (
+              <div className="space-y-2 p-regular-20 text-lg">
+                <p>
+                  Me anë të platformës sonë, studentët mund të zbulojnë ngjarje të rëndësishme, të krijojnë lidhje me bashkëmoshatarët dhe të angazhohen në aktivitete që pasurojnë jetën universitare.
+                </p>
+                <p>
+                  Pavarësisht nëse je pjesë e një klubi apo thjesht dëshiron të marrësh pjesë në një event, ne të ndihmojmë të jesh gjithmonë i/e informuar dhe i/e përfshirë.
+                </p>
+                <p>
+                  Bashkohu me komunitetin dhe bëhu pjesë e ndryshimit pozitiv në universitetin tonë!
+                </p>
+              </div>
+            )}
+            <Button
+              size="lg"
+              onClick={() => setShowMore(prev => !prev)}
+              className="button w-full sm:w-fit"
+            >
+              {showMore ? "Mbylle" : "Zbulo më Shumë"}
             </Button>
+           
           </div>
           <Image 
             src="/assets/images/hero.png"
