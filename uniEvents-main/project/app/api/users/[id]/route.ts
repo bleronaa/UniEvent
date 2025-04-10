@@ -72,6 +72,14 @@ export async function PUT(
       );
     }
 
+    // Verifikoni që të dhënat përditësuese janë të plota dhe të sakta
+    if (!data.name || !data.email) {
+      return NextResponse.json(
+        { error: "Name and email are required" },
+        { status: 400 }
+      );
+    }
+
     const user = await User.findById(params.id);
     if (!user) {
       return NextResponse.json(
@@ -80,11 +88,12 @@ export async function PUT(
       );
     }
 
-    // Shembull check: A është userId organizatori?
-    if (user.organizer.toString() !== userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    // Kontrolloni nëse përdoruesi është i autorizuar të modifikojë informacionet
+    // if (user._id.toString() !== userId) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    // }
 
+    // Përditësoni përdoruesin me të dhënat e reja
     const updatedUser = await User.findByIdAndUpdate(params.id, data, {
       new: true,
     }).populate("organizer", "name email");
@@ -102,6 +111,7 @@ export async function PUT(
     );
   }
 }
+
 
 // 4. DELETE: Fshin një user sipas ID
 export async function DELETE(
@@ -127,9 +137,9 @@ export async function DELETE(
       );
     }
 
-    if (user.organizer.toString() !== userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    // if (user.organizer.toString() !== userId) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    // }
 
     await User.findByIdAndDelete(params.id);
 
