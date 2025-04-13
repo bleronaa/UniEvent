@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Event from "../../models/Events";
 import mongoose from "mongoose";
+import type {IEvent} from "@/types/event"
 
 // 1. Metoda OPTIONS (për preflight requests)
 export async function OPTIONS() {
@@ -56,13 +57,14 @@ export async function GET(
 }
 
 // 3. PUT: Përditëson një event sipas ID
+
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     await dbConnect();
-    const data = await request.json();
+    const data: Partial<IEvent> = await request.json(); // Deklarim i qartë i tipit
     const userId = request.headers.get("x-user-id");
 
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
@@ -80,11 +82,11 @@ export async function PUT(
       );
     }
 
-    // Shembull check: A është userId organizatori?
-    if (event.organizer.toString() !== userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    // if (event.organizer.toString() !== userId) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    // }
 
+    // Përditëso eventin me të dhënat e reja
     const updatedEvent = await Event.findByIdAndUpdate(params.id, data, {
       new: true,
     }).populate("organizer", "name email");
@@ -103,6 +105,7 @@ export async function PUT(
   }
 }
 
+
 // 4. DELETE: Fshin një event sipas ID
 export async function DELETE(
   request: Request,
@@ -110,7 +113,7 @@ export async function DELETE(
 ) {
   try {
     await dbConnect();
-    const userId = request.headers.get("x-user-id");
+    const eventId = request.headers.get("x-user-id");
 
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
@@ -127,9 +130,9 @@ export async function DELETE(
       );
     }
 
-    if (event.organizer.toString() !== userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    // if (event.organizer.toString() !== userId) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    // }
 
     await Event.findByIdAndDelete(params.id);
 

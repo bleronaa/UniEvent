@@ -159,3 +159,40 @@ export async function DELETE(
     );
   }
 }
+// 5. POST: Shton një user të ri
+export async function POST(request: Request) {
+  try {
+    await dbConnect();
+    const data = await request.json();
+
+    if (!data.name || !data.email || !data.role) {
+      return NextResponse.json(
+        { error: "Name, email, and role are required" },
+        { status: 400 }
+      );
+    }
+
+    const existingUser = await User.findOne({ email: data.email });
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "User with this email already exists" },
+        { status: 409 }
+      );
+    }
+
+    const newUser = await User.create(data);
+
+    return NextResponse.json(newUser, {
+      status: 201,
+      headers: {
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
+    });
+  } catch (error) {
+    console.error("Error creating user:", error);
+    return NextResponse.json(
+      { error: "Failed to create user" },
+      { status: 500 }
+    );
+  }
+}
