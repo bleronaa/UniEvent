@@ -169,12 +169,23 @@ export default function RegistrationsPage() {
                       </div>
 
                       <div className="flex items-center">
-                        <Button
-                          onClick={() => registerForEvent(registration.event._id)}
-                          disabled={isPast || registration.status !== "pending"}
-                        >
-                          {registration.status === "pending" ? "Apply Again" : registration.status}
-                        </Button>
+                      <Button
+                            onClick={() => registerForEvent(registration.event._id)}
+                            disabled={isPast || registration.status !== "pending"}
+                            className={`
+                              ${registration.status === "pending" ? "bg-gray-500" : ""}
+                              ${registration.status === "confirmed" ? "bg-green-500" : ""}
+                              ${registration.status === "cancelled" ? "bg-red-500" : ""}
+                              text-white
+                            `}
+                          >
+                            {registration.status === "pending"
+                              ? "Apply Again"
+                              : registration.status === "confirmed"
+                              ? "Confirmed"
+                              : "Cancelled"}
+                          </Button>
+
                       </div>
                     </div>
                   </CardContent>

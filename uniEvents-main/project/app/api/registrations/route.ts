@@ -5,23 +5,23 @@ import User from "../models/User";
 import Events from "../models/Events";
 import { verify } from "jsonwebtoken";
 
-// 1. OPTIONS (For preflight requests)
+// Helper: CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "http://localhost:3000",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// OPTIONS: For preflight requests
 export async function OPTIONS() {
-  return NextResponse.json(
-    {},
-    {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "http://localhost:3000", // Correct origin
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
-    }
-  );
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
 }
 
-// 2. GET: Fetch all registrations
-export async function GET(request: Request) {
+// GET: Fetch all registrations
+export async function GET() {
   try {
     await dbConnect();
 
@@ -30,97 +30,108 @@ export async function GET(request: Request) {
       .populate("event", "title description date location capacity category")
       .sort({ createdAt: -1 });
 
-    return NextResponse.json(registrations, {
-      headers: {
-        "Access-Control-Allow-Origin": "http://localhost:3000",
-      },
-    });
+    return NextResponse.json(registrations, { headers: corsHeaders });
   } catch (error) {
     console.error("Error fetching registrations:", error);
     return NextResponse.json(
       { error: "Failed to fetch registrations" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
 
-// 3. POST: Create a new registration
+// POST: Register user to event
 export async function POST(request: Request) {
   try {
     await dbConnect();
 
     const { eventId } = await request.json();
-    
-    // Ensure the event exists
-    const event = await Events.findById(eventId);
-    if (!event) {
+    if (!eventId) {
       return NextResponse.json(
-        { error: "Event not found" },
-        { status: 404 }
+        { error: "Event ID is required" },
+        { status: 400, headers: corsHeaders }
       );
     }
 
-    // Get user ID from the Authorization header
     const authHeader = request.headers.get("Authorization");
     if (!authHeader) {
       return NextResponse.json(
         { error: "Authorization token missing" },
-        { status: 401 }
+        { status: 401, headers: corsHeaders }
       );
     }
 
-      // Check if the event is full before proceeding
-      if (event.registrationCount >= event.capacity) {
-        return NextResponse.json(
-          { error: "Event is full" },
-          { status: 400 }
-        );
-      }
+    const token = authHeader.split(" ")[1];
+    let decoded: any;
 
-    const token = authHeader.split(" ")[1]; // Extract the token from the "Bearer <token>" format
-    const decoded: any = verify(token, process.env.JWT_SECRET as string);
+    try {
+      decoded = verify(token, process.env.JWT_SECRET as string);
+      console.log("Decoded Token:", decoded); 
+    } catch (err) {
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401, headers: corsHeaders }
+      );
+    }
 
-    // Ensure the user exists
-    const user = await User.findById(decoded.id);
+    const user = await User.findById(decoded.userId);
     if (!user) {
       return NextResponse.json(
         { error: "User not found" },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
+        
       );
     }
 
-    // Ensure the user is not already registered for the event
-    const existingRegistration = await Registrations.findOne({ user: user._id, event: event._id });
-    if (existingRegistration) {
+    const event = await Events.findById(eventId);
+    if (!event) {
       return NextResponse.json(
-        { error: "You are already registered for this event" },
-        { status: 400 }
+        { error: "Event not found" },
+        { status: 404, headers: corsHeaders }
       );
     }
 
-    // Create new registration
-    const registration = new Registrations({
+    if (event.registrationCount >= event.capacity) {
+      return NextResponse.json(
+        { error: "Event is full" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const alreadyRegistered = await Registrations.findOne({
       user: user._id,
       event: event._id,
     });
 
-    await registration.save();
+    if (alreadyRegistered) {
+      return NextResponse.json(
+        { error: "You are already registered for this event" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
 
-    // Increment the event's registration count
-    event.registrationCount = event.registrationCount + 1;
-    await event.save();
-
-    return NextResponse.json({ message: "Registration successful", registration }, {
-      headers: {
-        "Access-Control-Allow-Origin": "http://localhost:3000",
-      },
+    const newRegistration = new Registrations({
+      user: user._id,
+      event: event._id,
     });
 
+    await newRegistration.save();
+
+    event.registrationCount += 1;
+    await event.save();
+
+    return NextResponse.json(
+      {
+        message: "Registration successful",
+        registration: newRegistration,
+      },
+      { status: 201, headers: corsHeaders }
+    );
   } catch (error) {
     console.error("Error registering for event:", error);
     return NextResponse.json(
       { error: "Failed to register for event" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
