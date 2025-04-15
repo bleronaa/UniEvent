@@ -24,11 +24,15 @@ export const useAuth = create<AuthState>()(
       user: null,
       setAuth: (token, user) => set({ token, user }),
       updateUser: (updatedUser) => {
-        const currentUser = get().user;
-        if (currentUser) {
-          set({ user: { ...currentUser, ...updatedUser } });
-        }
-      },
+        set((state) => {
+          const currentUser = state.user;
+          if (currentUser) {
+            const updated = { ...currentUser, ...updatedUser };
+            return { user: updated };  // Përditësojmë me informacionin e ri
+          }
+          return state;
+        });
+      },      
       logout: () => set({ token: null, user: null }),
       getAuthHeader: () => {
         const token = get().token;

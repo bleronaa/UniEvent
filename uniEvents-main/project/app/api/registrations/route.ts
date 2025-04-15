@@ -21,11 +21,31 @@ export async function OPTIONS() {
 }
 
 // GET: Fetch all registrations
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await dbConnect();
 
-    const registrations = await Registrations.find()
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Authorization token missing" },
+        { status: 401, headers: corsHeaders }
+      );
+    }
+
+    const token = authHeader.split(" ")[1];
+    let decoded: any;
+
+    try {
+      decoded = verify(token, process.env.JWT_SECRET as string);
+    } catch (err) {
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401, headers: corsHeaders }
+      );
+    }
+
+    const registrations = await Registrations.find({ user: decoded.userId }) // <-- filtrimi këtu
       .populate("user", "name email")
       .populate("event", "title description date location capacity category")
       .sort({ createdAt: -1 });
@@ -39,6 +59,7 @@ export async function GET() {
     );
   }
 }
+
 
 // POST: Register user to event
 export async function POST(request: Request) {

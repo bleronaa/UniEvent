@@ -24,44 +24,30 @@ export default function CreateEventPage() {
 
   if (!user) {
     router.push("/login");
-    return null;
+    return <div className="text-center py-10">Redirecting to login...</div>;
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-
-    if (!user) {
-      toast.error("You must be logged in to create an event");
-      setLoading(false);
-      return;
-    }
-
+  
     const formData = new FormData(event.currentTarget);
-    const eventData = {
-      title: formData.get("title"),
-      description: formData.get("description"),
-      date: date?.toISOString(),
-      location: formData.get("location"),
-      capacity: Number(formData.get("capacity")),
-      category: formData.get("category"),
-      organizer: user.id, // Now safe to use
-    };
-
+  
+    // Shto datën dhe organizerin në formData
+    if (date) formData.append("date", date.toISOString());
+    formData.append("organizer", user!.id);
+  
     try {
       const res = await fetch("/api/events", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`, // mos vendos Content-Type
         },
-        body: JSON.stringify(eventData),
+        body: formData,
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to create event");
-      }
-
+  
+      if (!res.ok) throw new Error("Failed to create event");
+  
       toast.success("Event created successfully");
       router.push("/");
     } catch (error) {
@@ -70,6 +56,7 @@ export default function CreateEventPage() {
       setLoading(false);
     }
   }
+  
 
   return (
     <>
@@ -93,6 +80,11 @@ export default function CreateEventPage() {
               <option value="Inxh.Kompjuterike">Inxh.Kompjuterike</option>
               <option value="Inxh.Mekanike">Inxh.Mekanike</option>
             </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="image">Ngarko një foto (opsionale)</Label>
+            <Input id="image" name="image" type="file" accept="image/*" />
           </div>
 
             <div className="space-y-2">

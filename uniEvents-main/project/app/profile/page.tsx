@@ -47,12 +47,7 @@ export default function ProfilePage() {
     }
   }, [user?.id]);
 
-  const isEventPast = (eventDate: string): boolean => {
-    const eventDateObj = new Date(eventDate);
-    const currentDate = new Date();
-    return eventDateObj < currentDate;
-  };
-
+ 
   const handleDelete = async (eventId: string) => {
     try {
       const response = await fetch(`/api/events/eventsuser?eventId=${eventId}`, {
@@ -97,25 +92,34 @@ export default function ProfilePage() {
   };
 
   
-const handleSubmit = async () => {
-  const response = await fetch("/api/users/profile", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "x-user-id": user?.id || "", // merre ID nga zustand
-    },
-    body: JSON.stringify({
-      name: formData.name,
-      email: formData.email,
-    }),
-  });
-
-  if (response.ok) {
-    const updatedUser = await response.json();
-    updateUser(updatedUser); 
-    
-  }
-};
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault(); // Prevent form submission from refreshing the page
+  
+    try {
+      const response = await fetch("/api/users/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user?.id || "", // Make sure this is passed correctly
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+        }),
+      });
+  
+      if (response.ok) {
+        const updatedUser = await response.json();
+        updateUser(updatedUser);  // Update the user in the frontend context
+        setIsEditing(false);      // Optionally, close the editing form
+      } else {
+        console.error("Failed to update user profile");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
+  };
+  
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

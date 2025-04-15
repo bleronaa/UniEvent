@@ -23,6 +23,7 @@ interface Event {
     _id: string;
     name: string;
   };
+  imageUrl?: string;
 }
 
 const categories = ["Inxh.Kompjuterike", "Inxh.Mekanike"];
@@ -159,6 +160,17 @@ export default function Home() {
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
+                      <div className="w-full h-60 bg-gray-200 rounded-lg">
+                        {event.imageUrl && (
+                          <Image 
+                            src={event.imageUrl} 
+                            alt={event.title} 
+                            width={500} 
+                            height={300} 
+                            className="object-cover w-full h-full rounded-lg" 
+                          />
+                        )}
+                      </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="flex items-center gap-2 text-gray-600">
                             <CalendarDays className="h-5 w-5 text-primary" />
