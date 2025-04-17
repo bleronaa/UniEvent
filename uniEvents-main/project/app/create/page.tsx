@@ -82,10 +82,7 @@ export default function CreateEventPage() {
             </select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="image">Ngarko një foto (opsionale)</Label>
-            <Input id="image" name="image" type="file" accept="image/*" />
-          </div>
+        
 
             <div className="space-y-2">
               <Label htmlFor="title">Titulli i eventit</Label>
@@ -156,7 +153,10 @@ export default function CreateEventPage() {
               />
             </div>
 
-            
+            <div className="space-y-2">
+            <Label htmlFor="image">Ngarko një foto (opsionale)</Label>
+            <Input id="image" name="image" type="file" accept="image/*" />
+          </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Duke u krijuar..." : "Krijo eventin"}

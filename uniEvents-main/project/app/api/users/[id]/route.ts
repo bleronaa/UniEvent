@@ -3,7 +3,7 @@ import dbConnect from "@/lib/db";
 import User from "../../models/User";
 import mongoose from "mongoose";
 
-// 1. Metoda OPTIONS (për preflight requests)
+// 1. Metoda OPTIONS (për kërkesa Preflight)
 export async function OPTIONS() {
   return NextResponse.json(
     {},
@@ -18,7 +18,7 @@ export async function OPTIONS() {
   );
 }
 
-// 2. GET: Merr një user sipas ID
+// 2. GET: Merr një përdorues sipas ID-së
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -28,7 +28,7 @@ export async function GET(
 
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
-        { error: "Invalid user ID" },
+        { error: "ID e përdoruesit është e pavlefshme" },
         { status: 400 }
       );
     }
@@ -36,7 +36,7 @@ export async function GET(
     const user = await User.findById(params.id).populate("organizer");
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "Përdoruesi nuk u gjet" },
         { status: 404 }
       );
     }
@@ -47,15 +47,15 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Error fetching user:", error);
+    console.error("Gabim gjatë marrjes së përdoruesit:", error);
     return NextResponse.json(
-      { error: "Failed to fetch user" },
+      { error: "Dështoi marrja e përdoruesit" },
       { status: 500 }
     );
   }
 }
 
-// 3. PUT: Përditëson një user sipas ID
+// 3. PUT: Përditëson një përdorues sipas ID-së
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -67,15 +67,15 @@ export async function PUT(
 
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
-        { error: "Invalid user ID" },
+        { error: "ID e përdoruesit është e pavlefshme" },
         { status: 400 }
       );
     }
 
-    // Verifikoni që të dhënat përditësuese janë të plota dhe të sakta
+    // Verifikoni që të dhënat janë të plota dhe të sakta
     if (!data.name || !data.email) {
       return NextResponse.json(
-        { error: "Name and email are required" },
+        { error: "Emri dhe email janë të nevojshme" },
         { status: 400 }
       );
     }
@@ -83,20 +83,16 @@ export async function PUT(
     const user = await User.findById(params.id);
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "Përdoruesi nuk u gjet" },
         { status: 404 }
       );
     }
 
-    // Kontrolloni nëse përdoruesi është i autorizuar të modifikojë informacionet
-    // if (user._id.toString() !== userId) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    // }
-
     // Përditësoni përdoruesin me të dhënat e reja
     const updatedUser = await User.findByIdAndUpdate(params.id, data, {
       new: true,
-    }).populate("organizer", "name email");
+      strictPopulate: false,
+    })
 
     return NextResponse.json(updatedUser, {
       headers: {
@@ -104,16 +100,15 @@ export async function PUT(
       },
     });
   } catch (error) {
-    console.error("Error updating user:", error);
+    console.error("Gabim gjatë përditësimit të përdoruesit:", error);
     return NextResponse.json(
-      { error: "Failed to update user" },
+      { error: "Dështoi përditësimi i përdoruesit" },
       { status: 500 }
     );
   }
 }
 
-
-// 4. DELETE: Fshin një user sipas ID
+// 4. DELETE: Fshin një përdorues sipas ID-së
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
@@ -124,7 +119,7 @@ export async function DELETE(
 
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
-        { error: "Invalid user ID" },
+        { error: "ID e përdoruesit është e pavlefshme" },
         { status: 400 }
       );
     }
@@ -132,19 +127,15 @@ export async function DELETE(
     const user = await User.findById(params.id);
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "Përdoruesi nuk u gjet" },
         { status: 404 }
       );
     }
 
-    // if (user.organizer.toString() !== userId) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    // }
-
     await User.findByIdAndDelete(params.id);
 
     return NextResponse.json(
-      { message: "User deleted successfully" },
+      { message: "Përdoruesi u fshi me sukses" },
       {
         headers: {
           "Access-Control-Allow-Origin": "http://localhost:3000",
@@ -152,14 +143,15 @@ export async function DELETE(
       }
     );
   } catch (error) {
-    console.error("Error deleting User:", error);
+    console.error("Gabim gjatë fshirjes së përdoruesit:", error);
     return NextResponse.json(
-      { error: "Failed to delete user" },
+      { error: "Dështoi fshirja e përdoruesit" },
       { status: 500 }
     );
   }
 }
-// 5. POST: Shton një user të ri
+
+// 5. POST: Shton një përdorues të ri
 export async function POST(request: Request) {
   try {
     await dbConnect();
@@ -167,7 +159,7 @@ export async function POST(request: Request) {
 
     if (!data.name || !data.email || !data.role) {
       return NextResponse.json(
-        { error: "Name, email, and role are required" },
+        { error: "Emri, email dhe roli janë të nevojshme" },
         { status: 400 }
       );
     }
@@ -175,7 +167,7 @@ export async function POST(request: Request) {
     const existingUser = await User.findOne({ email: data.email });
     if (existingUser) {
       return NextResponse.json(
-        { error: "User with this email already exists" },
+        { error: "Përdoruesi me këtë email ekziston tashmë" },
         { status: 409 }
       );
     }
@@ -189,9 +181,9 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Error creating user:", error);
+    console.error("Gabim gjatë krijimit të përdoruesit:", error);
     return NextResponse.json(
-      { error: "Failed to create user" },
+      { error: "Dështoi krijimi i përdoruesit" },
       { status: 500 }
     );
   }

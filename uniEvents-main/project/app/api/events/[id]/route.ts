@@ -89,7 +89,7 @@ export async function PUT(
     // Përditëso eventin me të dhënat e reja
     const updatedEvent = await Event.findByIdAndUpdate(params.id, data, {
       new: true,
-    }).populate("organizer", "name email");
+    }).populate("organizer", "name");
 
     return NextResponse.json(updatedEvent, {
       headers: {

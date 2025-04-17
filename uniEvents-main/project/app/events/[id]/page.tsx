@@ -148,7 +148,10 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
 
   const eventDate = new Date(event.date);
   const isUpcoming = eventDate > new Date();
-  const spotsLeft = event.capacity - registrationCount;
+  const hasCapacity = typeof event.capacity === 'number';
+  const spotsLeft = hasCapacity ? event.capacity - registrationCount : Infinity;
+  const isRegistrationOpen = isUpcoming && (spotsLeft > 0 || !hasCapacity);
+
 
   return (
     <>
@@ -170,7 +173,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                   Ndaje
                 </Button>
                 {isUpcoming && user && (
-                  <Button onClick={handleRegister} disabled={registering || spotsLeft <= 0}>
+                  <Button onClick={handleRegister} disabled={registering || !isRegistrationOpen}>
                     {registering ? "Registering..." : spotsLeft <= 0 ? "Event Full" : "Register Now"}
                   </Button>
                 )}
@@ -225,9 +228,11 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                     <div>
                       <p className="font-medium">Kapaciteti</p>
                       <p className="text-muted-foreground">
-                        {event.capacity} maksimumi i pjesëmarrësve
-                        {spotsLeft > 0 && ` (${spotsLeft} vende të lira)`}
+                        {typeof event.capacity === 'number' 
+                          ? `${event.capacity} maksimumi i pjesëmarrësve${spotsLeft > 0 ? ` (${spotsLeft} vende të lira)` : ''}` 
+                          : 'I papërcaktuar'}
                       </p>
+
                     </div>
                   </div>
 
@@ -258,19 +263,21 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                           : 'bg-yellow-100 text-yellow-800'
                         : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {isUpcoming 
-                        ? spotsLeft > 0 
-                          ? 'Regjistrimi i hapur' 
-                          : 'Plotësisht i rezervuar'
-                        : 'Event i shkuar'}
+                     {isRegistrationOpen 
+                        ? 'Regjistrimi i hapur' 
+                        : isUpcoming 
+                          ? 'Plotësisht i rezervuar' 
+                          : 'Event i shkuar'}
+
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <span>Kapaciteti</span>
                     <span className="text-sm">
-                      {registrationCount}/{event.capacity}
+                        {typeof event.capacity === 'number' ? `${registrationCount}/${event.capacity}` : 'I papërcaktuar'}
                     </span>
+
                   </div>
 
                   {isUpcoming && (
@@ -279,7 +286,8 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                         <Button 
                           className="w-full" 
                           onClick={handleRegister}
-                          disabled={registering || spotsLeft <= 0}
+                          disabled={registering || !isRegistrationOpen}
+
                         >
                           {registering 
                             ? "Duke u regjitruar..." 

@@ -24,8 +24,7 @@ UserSchema.pre('save', async function(next) {
 UserSchema.statics.createAdmins = async function() {
     const admins = [
         { name: 'Admin ', email: 'blerona.tmava@umib.net', password: 'Umib.2025', role: 'admin' },
-        { name: 'Admin ', email: 'habib.tmava@umib.net', password: 'Umib.2025', role: 'admin' },
-        { name: 'SuperAdmin', email: 'bleronatmava12@gmail.com', password: 'Umib.2025', role: 'staff' }
+        { name: 'SuperAdmin', email: 'bleronatmava12@gmail.com', password: 'Umib.2025', role: 'admin' }
     ];
 
     for (const admin of admins) {

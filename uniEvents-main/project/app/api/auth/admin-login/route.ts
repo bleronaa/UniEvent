@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     // Allowed admin emails
     const allowedAdmins = [
       "blerona.tmava@umib.net",
-      // "habib.tmava@umib.net",
+ 
       "bleronatmava12@gmail.com"
     ];
 
