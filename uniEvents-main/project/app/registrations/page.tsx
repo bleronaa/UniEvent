@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, MapPin, Users } from "lucide-react";
 import { format } from "date-fns";
 import { Footer } from "@/components/footer";
+import User from "../api/models/User";
 
 interface Registration {
   _id: string;
@@ -170,21 +171,22 @@ export default function RegistrationsPage() {
 
                       <div className="flex items-center">
                       <Button
-                            onClick={() => registerForEvent(registration.event._id)}
-                            disabled={isPast || registration.status !== "pending"}
-                            className={`
-                              ${registration.status === "pending" ? "bg-gray-500" : ""}
-                              ${registration.status === "confirmed" ? "bg-green-500" : ""}
-                              ${registration.status === "cancelled" ? "bg-red-500" : ""}
-                              text-white
-                            `}
-                          >
-                            {registration.status === "pending"
-                              ? "Apply Again"
-                              : registration.status === "confirmed"
-                              ? "Confirmed"
-                              : "Cancelled"}
-                          </Button>
+                          onClick={() => registerForEvent(registration.event._id)}
+                          disabled={isPast || registration.status !== "pending"}
+                          className={`
+                            ${registration.status === "pending" ? "bg-gray-500 cursor-not-allowed opacity-50" : ""}
+                            ${registration.status === "confirmed" ? "bg-green-500" : ""}
+                            ${registration.status === "cancelled" ? "bg-red-500" : ""}
+                            text-white
+                          `}
+                        >
+                          {registration.status === "pending"
+                            ? "Në pritje"
+                            : registration.status === "confirmed"
+                            ? "Konfirmuar"
+                            : "Anuluar"}
+                        </Button>
+
 
                       </div>
                     </div>

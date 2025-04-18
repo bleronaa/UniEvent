@@ -25,8 +25,7 @@ export async function POST(request: Request) {
     // Allowed admin emails
     const allowedAdmins = [
       "blerona.tmava@umib.net",
- 
-      "bleronatmava12@gmail.com"
+      "habibtmava06@gmail.com"
     ];
 
     // Find user in the database
@@ -80,5 +79,23 @@ export async function POST(request: Request) {
       { error: 'Login failed' },
       { status: 500 }
     );
+  }
+}
+
+export async function GET() {
+  try {
+    await dbConnect();
+
+    // Find all users with the 'admin' role
+    const admins = await User.find({ role: 'admin' });
+
+    if (!admins || admins.length === 0) {
+      return NextResponse.json({ error: 'No admins found' }, { status: 404 });
+    }
+
+    // Return the list of admins
+    return NextResponse.json(admins, { status: 200 });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to retrieve admins' }, { status: 500 });
   }
 }
