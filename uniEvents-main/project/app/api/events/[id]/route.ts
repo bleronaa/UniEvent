@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Event from "../../models/Events";
 import mongoose from "mongoose";
-import type {IEvent} from "@/types/event"
+import type {IEvent} from "@/types/event";
+import User from "../../models/User";
 
 // 1. Metoda OPTIONS (për preflight requests)
 export async function OPTIONS() {

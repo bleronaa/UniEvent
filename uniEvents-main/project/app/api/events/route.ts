@@ -4,6 +4,7 @@ import Events from "../models/Events";
 import path from "path";
 import { writeFile } from "fs/promises";
 import { v4 as uuidv4 } from "uuid";
+import User from "../models/User";
 
 export const config = {
   api: {
