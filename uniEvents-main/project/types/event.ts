@@ -7,5 +7,6 @@ export interface IEvent {
     date: string;
     imageUrl?: string;
     organizer: string;
+    status: "pending" | "approved" | "rejected";
   }
   

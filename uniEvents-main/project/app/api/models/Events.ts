@@ -15,7 +15,12 @@ const EventSchema = new mongoose.Schema({
     enum: ["Inxh.Kompjuterike", "Inxh.Mekanike"], // Restricting category to these values
   },
   image:{ type: String, default: "" }, // Add the image field
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
 });
 
 export default mongoose.models.Event || mongoose.model("Event", EventSchema);

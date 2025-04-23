@@ -20,7 +20,7 @@ export async function OPTIONS() {
   });
 }
 
-// GET: Fetch registrations (for users and admins)
+// GET: Fetch registrations (for users, admins, or specific event)
 export async function GET(request: Request) {
   try {
     await dbConnect();
@@ -57,9 +57,31 @@ export async function GET(request: Request) {
       );
     }
 
+    // Kontrollo nëse ka një parametër eventId në URL
+    const url = new URL(request.url);
+    const eventId = url.searchParams.get("eventId");
+
     let registrations;
 
-    // If user is admin, fetch all registrations; otherwise, fetch only user's registrations
+    if (eventId) {
+      // Kontrollo nëse përdoruesi është regjistruar për një event specifik
+      registrations = await Registrations.findOne({
+        user: decoded.userId,
+        event: eventId,
+      })
+        .populate("user", "name email")
+        .populate("event", "title description date location capacity category");
+
+      return NextResponse.json(
+        {
+          isRegistered: !!registrations,
+          registration: registrations || null,
+        },
+        { headers: corsHeaders }
+      );
+    }
+
+    // Logjika ekzistuese për marrjen e të gjitha regjistrimeve
     if (user.role === "admin") {
       registrations = await Registrations.find({})
         .populate("user", "name email")
@@ -163,7 +185,7 @@ export async function POST(request: Request) {
     const newRegistration = new Registrations({
       user: user._id,
       event: event._id,
-      status: "pending", // Ensure status is set to pending
+      status: "pending",
     });
 
     await newRegistration.save();

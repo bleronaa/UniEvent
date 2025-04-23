@@ -138,8 +138,8 @@ export default function ProfilePage() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Manage your account settings</CardDescription>
+              <CardTitle>Profili</CardTitle>
+              <CardDescription>Menaxhoni cilësimet e llogarisë tuaj</CardDescription>
             </div>
             <Badge className={getRoleBadgeColor(user.role)}>{user.role}</Badge>
           </div>
@@ -148,7 +148,7 @@ export default function ProfilePage() {
           {isEditing ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Emri</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -165,13 +165,13 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit">Ruaj ndryshimet</Button>
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={() => setIsEditing(false)}
                 >
-                  Cancel
+                  Largoje
                 </Button>
               </div>
             </form>
@@ -192,12 +192,12 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Role: {user.role}</span>
+                  <span className="text-sm">Roli: {user.role}</span>
                 </div>
                 {(user.role === "computer_engineering" || user.role === "mechanical_engineering") && (
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Department: {user.role.replace("_", " ").split(" ").map(word => 
+                    <span className="text-sm">Departamenti: {user.role.replace("_", " ").split(" ").map(word => 
                       word.charAt(0).toUpperCase() + word.slice(1)
                     ).join(" ")}</span>
                   </div>
@@ -210,7 +210,7 @@ export default function ProfilePage() {
                 onClick={() => setIsEditing(true)}
               >
                 <PencilLine className="h-4 w-4 mr-2" />
-                Edit Profile
+                Edito Profilin
               </Button>
             </div>
           )}
@@ -222,19 +222,19 @@ export default function ProfilePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
-              Your Created Events
+              Eventet tuaja te krijuara
             </CardTitle>
             <CardDescription>
-              Manage and track your created events
+              MEnaxhoni eventet tuaja
             </CardDescription>
           </CardHeader>
           <CardContent>
             {events.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No events created yet.</p>
+                <p className="text-muted-foreground">Asnjë event nuk është krujuar deri tani.</p>
                 <Button className="mt-4" variant="outline">
-                  Create Your First Event
+                  Krijo eventin tënd të parë
                 </Button>
               </div>
             ) : (
