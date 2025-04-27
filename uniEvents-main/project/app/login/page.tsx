@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { LogIn } from "lucide-react";
@@ -14,8 +14,20 @@ import { Footer } from "@/components/footer";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setAuth } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+
+  // Lexo redirect URL-në pas hidratimit
+  useEffect(() => {
+    const redirect = searchParams.get("redirect");
+    console.log("searchParams:", searchParams.toString()); // Debugging
+    console.log("redirect param:", redirect); // Debugging
+    if (redirect && redirect.startsWith("/events/")) {
+      setRedirectUrl(redirect);
+    }
+  }, [searchParams]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,14 +47,21 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+        throw new Error(data.error || "Kyqja dështoi");
       }
 
       setAuth(data.token, data.user);
-      toast.success("Logged in successfully");
-      router.push("/");
+      toast.success("Kyqja u krye me sukses");
+
+      // Ridrejto bazuar në redirectUrl
+      console.log("redirectUrl on submit:", redirectUrl); // Debugging
+      if (redirectUrl) {
+        router.push(redirectUrl); // Ridrejto te faqja e eventit
+      } else {
+        router.push("/"); // Ridrejto te faqja kryesore si default
+      }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Login failed");
+      toast.error(error instanceof Error ? error.message : "Kyqja dështoi");
     } finally {
       setLoading(false);
     }
@@ -52,15 +71,19 @@ export default function LoginPage() {
     <div className="min-h-[calc(100vh-4rem)] grid grid-cols-1 md:grid-cols-2">
       {/* Left side - Image */}
       <div className="hidden md:block relative bg-gradient-to-br from-primary/10 to-primary/5">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ 
-          backgroundImage: 'url("https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop")',
-          backgroundBlendMode: 'overlay',
-          opacity: 0.9
-        }} />
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              'url("https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop")',
+            backgroundBlendMode: "overlay",
+            opacity: 0.9,
+          }}
+        />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/50 to-primary/30 flex flex-col items-center justify-center text-white p-8">
           <h2 className="text-3xl font-bold mb-4">Mirë se vini përsëri!</h2>
           <p className="text-lg text-center max-w-md">
-          Bashkohuni me komunitetin tonë dhe qëndroni të lidhur me të gjitha ngjarjet emocionuese që ndodhin në kampus.
+            Bashkohuni me komunitetin tonë dhe qëndroni të lidhur me të gjitha ngjarjet emocionuese që ndodhin në kampus.
           </p>
         </div>
       </div>
@@ -74,7 +97,12 @@ export default function LoginPage() {
             </div>
             <CardTitle className="text-2xl text-center">Kyqu</CardTitle>
             <CardDescription className="text-center">
-            Futni kredencialet tuaja për të hyrë në llogarinë tuaj
+              Futni kredencialet tuaja për të hyrë në llogarinë tuaj
+              {redirectUrl && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Duke u kyqur për të regjistruar një event
+                </p>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -115,6 +143,5 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
- 
   );
 }

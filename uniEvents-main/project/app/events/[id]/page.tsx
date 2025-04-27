@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +26,6 @@ interface Event {
 }
 
 interface Registration {
-  _id: string;
   status: "pending" | "confirmed" | "cancelled";
 }
 
@@ -50,7 +49,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
         setEvent(data);
         setRegistrationCount(data.registrationCount || 0);
       } catch (error) {
-        toast.error("Failed to load event details");
+        toast.error("Dështoi ngarkimi i detajeve të eventit");
         router.push("/");
       }
     }
@@ -62,22 +61,31 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
         const data: Event[] = await res.json();
         setOtherEvents(data.filter((e) => e._id !== params.id));
       } catch (error) {
-        console.error("Failed to load other events:", error);
+        console.error("Dështoi ngarkimi i eventeve të tjera:", error);
       }
     }
 
     async function checkRegistration() {
-      if (!user) return;
+      if (!user) {
+        console.log("No user logged in, skipping registration check");
+        return;
+      }
       try {
         const res = await fetch(`/api/registrations?eventId=${params.id}`, {
           headers: getAuthHeader(),
         });
-        if (!res.ok) throw new Error("Failed to check registration status");
-        const data = await res.json();
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || "Failed to check registration status");
+        }
+        const data: { isRegistered: boolean; registration: Registration | null } = await res.json();
+        console.log("Registration API response:", data); // Debugging
+
         setIsRegistered(data.isRegistered);
         setRegistrationStatus(data.registration?.status || null);
       } catch (error) {
-        console.error("Error checking registration status:", error);
+        console.error("Gabim gjatë kontrollit të statusit të regjistrimit:", error);
+        toast.error("Dështoi kontrolli i statusit të regjistrimit");
       }
     }
 
@@ -92,14 +100,15 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
 
   async function handleRegister() {
     if (!user) {
-      router.push("/login");
+      // Ridrejto te faqja e logimit me parametrin redirect
+      router.push(`/login?redirect=/events/${params.id}`);
       return;
     }
 
     const authHeader = getAuthHeader();
     if (!authHeader) {
-      toast.error("Authentication required");
-      router.push("/login");
+      toast.error("Kërkohet autentikim");
+      router.push(`/login?redirect=/events/${params.id}`);
       return;
     }
 
@@ -120,12 +129,12 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
         throw new Error(data.error || "Failed to register");
       }
 
-      toast.success("Successfully registered for event");
+      toast.success("Regjistrimi u krye me sukses");
       setIsRegistered(true);
       setRegistrationStatus("pending");
-      router.push("/registrations");
+      // router.push("/registrations"); // Komento për të qëndruar në faqe
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to register for event");
+      toast.error(error instanceof Error ? error.message : "Dështoi regjistrimi për eventin");
     } finally {
       setRegistering(false);
     }
@@ -140,7 +149,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
       });
     } catch (error) {
       navigator.clipboard.writeText(window.location.href);
-      toast.success("Event link copied to clipboard");
+      toast.success("Linku i eventit u kopjua në clipboard");
     }
   }
 
@@ -171,6 +180,13 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
   const spotsLeft = hasCapacity ? event.capacity - registrationCount : Infinity;
   const isRegistrationOpen = isUpcoming && (spotsLeft > 0 || !hasCapacity);
 
+  // Përkthime për statusin
+  const statusTranslations = {
+    pending: "Në pritje",
+    confirmed: "Konfirmuar",
+    cancelled: "Anuluar",
+  };
+
   return (
     <>
       <div className="container mx-auto py-8 px-4">
@@ -192,7 +208,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                   </Button>
                   {isUpcoming && user && !isRegistered && (
                     <Button onClick={handleRegister} disabled={registering || !isRegistrationOpen}>
-                      {registering ? "Registering..." : spotsLeft <= 0 ? "Event Full" : "Register Now"}
+                      {registering ? "Duke u regjistruar..." : spotsLeft <= 0 ? "Event plot" : "Regjistrohu tani"}
                     </Button>
                   )}
                 </div>
@@ -303,11 +319,17 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                       <div className="pt-4">
                         {user ? (
                           isRegistered ? (
-                            <div className="flex items-center gap-2 text-green-600">
-                              <CheckCircle className="h-5 w-5" />
-                              <span>
-                                Ju jeni regjistruar njëherë (Statusi: {registrationStatus})
-                              </span>
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center gap-2 text-green-600">
+                                <CheckCircle className="h-5 w-5" />
+                                <span>
+                                  Faleminderit, ju jeni regjistruar njëherë! (Statusi:{" "}
+                                  {statusTranslations[registrationStatus!] || registrationStatus})
+                                </span>
+                              </div>
+                              <Button variant="link" asChild>
+                                <Link href="/registrations">Shiko regjistrimet e tua</Link>
+                              </Button>
                             </div>
                           ) : (
                             <Button
@@ -323,8 +345,11 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                             </Button>
                           )
                         ) : (
-                          <Button className="w-full" onClick={() => router.push("/login")}>
-                            Login to Register
+                          <Button
+                            className="w-full"
+                            onClick={() => router.push(`/login?redirect=/events/${params.id}`)}
+                          >
+                            Hyr për të Regjistruar
                           </Button>
                         )}
                       </div>

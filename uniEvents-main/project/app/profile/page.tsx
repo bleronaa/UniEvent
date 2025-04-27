@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCircle, Mail, BookOpen, Building2, PencilLine, Trash2, Calendar, Users, X } from "lucide-react";
+import { UserCircle, Mail, BookOpen, Building2, PencilLine, Trash2, Calendar, Users, X, Link } from "lucide-react";
 import { useState, useEffect } from "react";
+import NextLink from "next/link"; // Importo Link nga next/link
 
 // Tipi për eventet
 interface Event {
@@ -336,8 +337,10 @@ export default function ProfilePage() {
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">Asnjë event nuk është krijuar deri tani.</p>
-                <Button className="mt-4" variant="outline">
-                  Krijo eventin tënd të parë
+                <Button className="mt-4" variant="outline" asChild>
+                  <NextLink href="/create">
+                    Krijo eventin tënd të parë
+                  </NextLink>
                 </Button>
               </div>
             ) : (
@@ -485,7 +488,6 @@ export default function ProfilePage() {
                                 }
                               />
                             </div>
-                          
                             <div className="flex gap-2">
                               <Button type="submit">Ruaj ndryshimet</Button>
                               <Button type="button" variant="outline" onClick={cancelEditing}>

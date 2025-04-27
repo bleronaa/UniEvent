@@ -61,10 +61,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const eventId = url.searchParams.get("eventId");
 
-    let registrations;
-
     if (eventId) {
-      // Kontrollo nëse përdoruesi është organizatori i eventit ose admin
       const event = await Events.findById(eventId);
       if (!event) {
         console.log("Eventi nuk u gjet për ID:", eventId);
@@ -73,25 +70,37 @@ export async function GET(request: Request) {
           { status: 404, headers: corsHeaders }
         );
       }
-      if (event.organizer.toString() !== decoded.userId && user.role !== "admin") {
-        console.log(`Përdoruesi ${user.email} nuk është i autorizuar për të parë regjistrimet e eventit ${eventId}`);
-        return NextResponse.json(
-          { error: "Nuk ke autorizim për të parë regjistrimet e këtij eventi" },
-          { status: 403, headers: corsHeaders }
-        );
+
+      // Kontrollo nëse përdoruesi është organizatori ose admin për të marrë të gjitha regjistrimet
+      if (event.organizer.toString() === decoded.userId || user.role === "admin") {
+        const registrations = await Registrations.find({ event: eventId })
+          .populate("user", "name email")
+          .populate("event", "title description date location capacity category")
+          .sort({ createdAt: -1 });
+
+        console.log(`U morën ${registrations.length} regjistrime për eventin ${eventId}`);
+        return NextResponse.json(registrations, { headers: corsHeaders });
       }
 
-      // Merr të gjitha regjistrimet për eventin
-      registrations = await Registrations.find({ event: eventId })
+      // Për përdoruesit jo-admin dhe jo-organizatorë, kthe vetëm regjistrimin e tyre
+      const registration = await Registrations.findOne({
+        user: decoded.userId,
+        event: eventId,
+      })
         .populate("user", "name email")
-        .populate("event", "title description date location capacity category")
-        .sort({ createdAt: -1 });
+        .populate("event", "title description date location capacity category");
 
-      console.log(`U morën ${registrations.length} regjistrime për eventin ${eventId}`);
-      return NextResponse.json(registrations, { headers: corsHeaders });
+      return NextResponse.json(
+        {
+          isRegistered: !!registration,
+          registration: registration ? { status: registration.status } : null,
+        },
+        { headers: corsHeaders }
+      );
     }
 
     // Logjika për marrjen e regjistrimeve të përdoruesit ose të gjitha (për admin)
+    let registrations;
     if (user.role === "admin") {
       registrations = await Registrations.find({})
         .populate("user", "name email")
