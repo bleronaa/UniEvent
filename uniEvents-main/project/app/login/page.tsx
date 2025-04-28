@@ -18,12 +18,13 @@ export default function LoginPage() {
   const { setAuth } = useAuth();
   const [loading, setLoading] = useState(false);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); // Shto gjendjen për gabimin
 
   // Lexo redirect URL-në pas hidratimit
   useEffect(() => {
     const redirect = searchParams.get("redirect");
-    console.log("searchParams:", searchParams.toString()); // Debugging
-    console.log("redirect param:", redirect); // Debugging
+    console.log("searchParams:", searchParams.toString());
+    console.log("redirect param:", redirect);
     if (redirect && redirect.startsWith("/events/")) {
       setRedirectUrl(redirect);
     }
@@ -32,6 +33,7 @@ export default function LoginPage() {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
+    setError(null); // Pastro gabimin e mëparshëm
 
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
@@ -47,21 +49,26 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Kyqja dështoi");
+        // Kontrollo për gabim specifik të kredencialeve
+        if (data.error === "Kredenciale të pavlefshme") {
+          setError("Keni gabim në email ose fjalëkalim");
+        } else {
+          setError(data.error || "Kyqja dështoi");
+        }
+        return;
       }
 
       setAuth(data.token, data.user);
       toast.success("Kyqja u krye me sukses");
 
-      // Ridrejto bazuar në redirectUrl
-      console.log("redirectUrl on submit:", redirectUrl); // Debugging
+      console.log("redirectUrl on submit:", redirectUrl);
       if (redirectUrl) {
-        router.push(redirectUrl); // Ridrejto te faqja e eventit
+        router.push(redirectUrl);
       } else {
-        router.push("/"); // Ridrejto te faqja kryesore si default
+        router.push("/");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Kyqja dështoi");
+      setError("Kyqja dështoi");
     } finally {
       setLoading(false);
     }
@@ -129,6 +136,9 @@ export default function LoginPage() {
                   required
                 />
               </div>
+              {error && (
+                <p className="text-red-500 text-sm text-center">{error}</p>
+              )}
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? "Duke u kyqur..." : "Kyqu"}
               </Button>

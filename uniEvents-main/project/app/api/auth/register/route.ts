@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import User from "../../models/User";
@@ -9,43 +10,54 @@ export async function POST(request: Request) {
 
     const { name, email, password, role } = await request.json();
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    // Kontrollo nëse email-i është i vlefshëm për përdoruesit jo-admin
+    if (role !== "admin" && !email.endsWith("@umib.net")) {
       return NextResponse.json(
-        { error: "User already exists" },
+        { error: "Vetëm email-et me @umib.net lejohen për regjistrim." },
         { status: 400 }
       );
     }
 
-    // Create new user
+    // Kontrollo nëse përdoruesi ekziston tashmë
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "Përdoruesi ekziston tashmë" },
+        { status: 400 }
+      );
+    }
+
+    // Krijo përdoruesin e ri
     const user = await User.create({
       name,
       email,
-      password, // Password will be hashed by the pre-save hook in the User model
-      role: role || "student"
+      password, // Password-i do të hashohet nga pre-save hook në User model
+      role: role || "student",
     });
 
-    // Generate JWT token
+    // Gjenero JWT token
     const token = sign(
       { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
+      { expiresIn: "7d" }
     );
 
-    return NextResponse.json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Registration error:", error);
     return NextResponse.json(
-      { error: "Failed to register user" },
+      { error: "Dështoi regjistrimi i përdoruesit" },
       { status: 500 }
     );
   }

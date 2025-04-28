@@ -7,7 +7,7 @@ interface IUser extends mongoose.Document {
   email: string;
   password: string;
   role: "student" | "staff" | "computer_engineering" | "mechanical_engineering" | "admin";
-  googleId?:string;
+  googleId?: string;
 }
 
 // Define interface for static methods
@@ -18,14 +18,30 @@ interface IUserModel extends Model<IUser> {
 // User Schema with Role-based Admin and Student
 const UserSchema: Schema<IUser> = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    validate: {
+      validator: function (email: string) {
+        // Lejo email-et me @umib.net për përdoruesit jo-admin
+        // Për adminët, lejo çdo email
+        if (this.role === "admin") {
+          return true; // Adminët mund të kenë çdo email
+        }
+        return email.endsWith("@umib.net");
+      },
+      message: (props: { value: string }) =>
+        `Email-i ${props.value} nuk është i vlefshëm. Vetëm email-et me @umib.net lejohen për përdoruesit jo-admin.`,
+    },
+  },
   password: { type: String, required: true },
   role: {
     type: String,
     enum: ["student", "staff", "computer_engineering", "mechanical_engineering", "admin"],
     default: "student",
-    googleId:{type:String, unique:true, sparse: true}
   },
+  googleId: { type: String, unique: true, sparse: true },
 });
 
 // Hash the password before saving
@@ -40,7 +56,7 @@ UserSchema.statics.createAdmins = async function () {
   const admins = [
     { name: "Blerona", email: "blerona.tmava@umib.net", password: "12345678", role: "admin" },
     { name: "Blerona", email: "bleronatmava12@gmail.com", password: "12345678", role: "admin" },
-    { name: "Habib ", email: "habibtmava06@gmail.com", password: "12345678", role: "admin" },
+    { name: "Habib", email: "habibtmava06@gmail.com", password: "12345678", role: "admin" },
   ];
 
   for (const admin of admins) {

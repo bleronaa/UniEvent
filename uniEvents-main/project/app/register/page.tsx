@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
@@ -16,10 +16,12 @@ export default function RegisterPage() {
   const router = useRouter();
   const { setAuth } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null); // Shto gjendjen për gabimin
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
+    setError(null); // Pastro gabimin e mëparshëm
 
     const formData = new FormData(event.currentTarget);
     const name = formData.get("name") as string;
@@ -36,14 +38,20 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Registration failed");
+        // Kontrollo për gabim specifik të email-it jo-@umib.net
+        if (data.error === "Vetëm email-et me @umib.net lejohen për regjistrim.") {
+          setError("Vetëm studentët me email të universitetit mund të regjistrohen");
+        } else {
+          setError(data.error || "Regjistrimi dështoi");
+        }
+        return;
       }
 
       setAuth(data.token, data.user);
-      toast.success("Registered successfully");
+      toast.success("Regjistrimi u krye me sukses");
       router.push("/");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Registration failed");
+      setError("Regjistrimi dështoi");
     } finally {
       setLoading(false);
     }
@@ -53,15 +61,19 @@ export default function RegisterPage() {
     <div className="min-h-[calc(100vh-4rem)] grid grid-cols-1 md:grid-cols-2">
       {/* Left side - Image */}
       <div className="hidden md:block relative bg-gradient-to-br from-primary/10 to-primary/5">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ 
-          backgroundImage: 'url("https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop")',
-          backgroundBlendMode: 'overlay',
-          opacity: 0.9
-        }} />
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              'url("https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop")',
+            backgroundBlendMode: "overlay",
+            opacity: 0.9,
+          }}
+        />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/50 to-primary/30 flex flex-col items-center justify-center text-white p-8">
           <h2 className="text-3xl font-bold mb-4">Bashkohuni me ne</h2>
           <p className="text-lg text-center max-w-md">
-          Krijo një llogari për të zbuluar dhe marrë pjesë në ngjarje emocionuese të kampusit, për t'u lidhur me bashkëmoshatarët dhe për të qëndruar të përditësuar me aktivitetet e universitetit.
+            Krijo një llogari për të zbuluar dhe marrë pjesë në ngjarje emocionuese të kampusit, për t'u lidhur me bashkëmoshatarët dhe për të qëndruar të përditësuar me aktivitetet e universitetit.
           </p>
         </div>
       </div>
@@ -75,7 +87,7 @@ export default function RegisterPage() {
             </div>
             <CardTitle className="text-2xl text-center">Krijo llogari</CardTitle>
             <CardDescription className="text-center">
-            Futni të dhënat tuaja për të krijuar një llogari të re
+              Futni të dhënat tuaja për të krijuar një llogari të re
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -113,6 +125,9 @@ export default function RegisterPage() {
                   required
                 />
               </div>
+              {error && (
+                <p className="text-red-500 text-sm text-center">{error}</p>
+              )}
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? "Duke u krijuar..." : "Krijo llogari"}
               </Button>
