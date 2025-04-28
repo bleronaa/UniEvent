@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCircle, Mail, BookOpen, Building2, PencilLine, Trash2, Calendar, Users, X, Link } from "lucide-react";
+import { UserCircle, Mail, BookOpen, Building2, PencilLine, Trash2, Calendar, Users, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import NextLink from "next/link"; // Importo Link nga next/link
+import NextLink from "next/link";
 
 // Tipi për eventet
 interface Event {
@@ -28,9 +28,9 @@ interface Event {
 interface Registration {
   _id: string;
   user: {
-    name: string;
-    email: string;
-  };
+    name?: string;
+    email?: string;
+  } | null; // Lejo që user të jetë null
   status: string;
 }
 
@@ -42,10 +42,10 @@ export default function ProfilePage() {
     email: user?.email || "",
   });
   const [events, setEvents] = useState<Event[]>([]);
-  const [registrations, setRegistrations] = useState<{ [key: string]: Registration[] }>({}); // Regjistrimet sipas eventId
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null); // Event i zgjedhur për regjistrimet
-  const [editingEventId, setEditingEventId] = useState<string | null>(null); // Event i zgjedhur për editim
-  const [editFormData, setEditFormData] = useState<Partial<Event>>({}); // Të dhënat e formularit të editimit
+  const [registrations, setRegistrations] = useState<{ [key: string]: Registration[] }>({});
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<Partial<Event>>({});
 
   // Merr eventet e krijuara nga përdoruesi
   useEffect(() => {
@@ -114,9 +114,9 @@ export default function ProfilePage() {
   // Ndërro gjendjen e shfaqjes së regjistrimeve
   const toggleRegistrations = (eventId: string) => {
     if (selectedEventId === eventId) {
-      setSelectedEventId(null); // Mbyll seksionin
+      setSelectedEventId(null);
     } else {
-      fetchRegistrations(eventId); // Hap seksionin dhe merr regjistrimet
+      fetchRegistrations(eventId);
     }
   };
 
@@ -126,7 +126,7 @@ export default function ProfilePage() {
     setEditFormData({
       title: event.title,
       description: event.description,
-      date: new Date(event.date).toISOString().slice(0, 16), // Formato për datetime-local
+      date: new Date(event.date).toISOString().slice(0, 16),
       location: event.location,
       capacity: event.capacity,
       category: event.category,
@@ -233,10 +233,12 @@ export default function ProfilePage() {
   // Nëse përdoruesi nuk është i kyçur
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardContent className="flex items-center justify-center h-40">
-            <p className="text-muted-foreground">Ju lutem kyçuni për të parë profilin tuaj.</p>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Ju lutem kyçuni për të parë profilin tuaj.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -244,66 +246,78 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Card className="max-w-2xl mx-auto">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Seksioni i Profilit */}
+      <Card className="max-w-3xl mx-auto mb-8">
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <CardTitle>Profili</CardTitle>
-              <CardDescription>Menaxhoni cilësimet e llogarisë tuaj</CardDescription>
+              <CardTitle className="text-xl sm:text-2xl">Profili</CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                Menaxhoni cilësimet e llogarisë tuaj
+              </CardDescription>
             </div>
-            <Badge className={getRoleBadgeColor(user.role)}>{user.role}</Badge>
+            <Badge className={`${getRoleBadgeColor(user.role)} text-xs sm:text-sm`}>
+              {user.role}
+            </Badge>
           </div>
         </CardHeader>
         <CardContent>
           {isEditing ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Emri</Label>
+                <Label htmlFor="name" className="text-sm sm:text-base">Emri</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full"
                 />
               </div>
-              <div className="flex gap-2">
-                <Button type="submit">Ruaj ndryshimet</Button>
-                <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="submit" className="w-full sm:w-auto">Ruaj ndryshimet</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditing(false)}
+                  className="w-full sm:w-auto"
+                >
                   Anulo
                 </Button>
               </div>
             </form>
           ) : (
             <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <UserCircle className="h-16 w-16 text-muted-foreground" />
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <UserCircle className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
                 <div>
-                  <h3 className="text-lg font-medium">{user.name}</h3>
+                  <h3 className="text-lg sm:text-xl font-medium">{user.name}</h3>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
               </div>
-              <div className="grid gap-4 pt-4">
+              <div className="grid gap-3 text-sm sm:text-base">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Email: {user.email}</span>
+                  <span>Email: {user.email}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Roli: {user.role}</span>
+                  <span>Roli: {user.role}</span>
                 </div>
                 {(user.role === "computer_engineering" || user.role === "mechanical_engineering") && (
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">
+                    <span>
                       Departamenti:{" "}
                       {user.role
                         .replace("_", " ")
@@ -314,7 +328,11 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
-              <Button variant="outline" className="mt-4" onClick={() => setIsEditing(true)}>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto mt-4"
+                onClick={() => setIsEditing(true)}
+              >
                 <PencilLine className="h-4 w-4 mr-2" />
                 Edito Profilin
               </Button>
@@ -323,201 +341,243 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      <div className="mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              Eventet tuaja të krijuara
-            </CardTitle>
-            <CardDescription>Menaxhoni eventet tuaja</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {events.length === 0 ? (
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Asnjë event nuk është krijuar deri tani.</p>
-                <Button className="mt-4" variant="outline" asChild>
-                  <NextLink href="/create">
-                    Krijo eventin tënd të parë
-                  </NextLink>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {events.map((event) => (
-                  <Card key={event._id} className="bg-muted/50">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <h4 className="font-semibold text-lg">{event.title}</h4>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Calendar className="h-4 w-4" />
-                            <time className="text-sm">{formatDate(event.date)}</time>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toggleRegistrations(event._id)}
-                          >
-                            {selectedEventId === event._id ? (
-                              <>
-                                <X className="h-4 w-4 mr-2" />
-                                Mbyll
-                              </>
-                            ) : (
-                              <>
-                                <Users className="h-4 w-4 mr-2" />
-                                Shiko Regjistrimet
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => startEditing(event)}
-                          >
-                            <PencilLine className="h-4 w-4 mr-2" />
-                            Edito
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(event._id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Fshi
-                          </Button>
+      {/* Seksioni i Eventeve */}
+      <Card className="max-w-3xl mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl">
+            <Calendar className="h-5 w-5 text-primary" />
+            Eventet tuaja të krijuara
+          </CardTitle>
+          <CardDescription className="text-sm sm:text-base">
+            Menaxhoni eventet tuaja
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {events.length === 0 ? (
+            <div className="text-center py-8">
+              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground text-sm sm:text-base">
+                Asnjë event nuk është krijuar deri tani.
+              </p>
+              <Button className="mt-4" variant="outline" asChild>
+                <NextLink href="/create">
+                  Krijo eventin tënd të parë
+                </NextLink>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {events.map((event) => (
+                <Card key={event._id} className="bg-muted/50">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-lg sm:text-xl">{event.title}</h4>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <time className="text-sm">{formatDate(event.date)}</time>
                         </div>
                       </div>
-                      {editingEventId === event._id && (
-                        <div className="mt-4 p-4 border rounded-lg bg-white animate-in fade-in duration-300">
-                          <h5 className="font-semibold text-lg mb-4">Edito Eventin</h5>
-                          <form
-                            onSubmit={(e) => {
-                              e.preventDefault();
-                              handleEditSubmit(event._id);
-                            }}
-                            className="space-y-4"
-                          >
-                            <div className="space-y-2">
-                              <Label htmlFor={`title-${event._id}`}>Titulli</Label>
-                              <Input
-                                id={`title-${event._id}`}
-                                value={editFormData.title || ""}
-                                onChange={(e) =>
-                                  setEditFormData({ ...editFormData, title: e.target.value })
-                                }
-                                required
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`description-${event._id}`}>Përshkrimi</Label>
-                              <Input
-                                id={`description-${event._id}`}
-                                value={editFormData.description || ""}
-                                onChange={(e) =>
-                                  setEditFormData({ ...editFormData, description: e.target.value })
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`date-${event._id}`}>Data dhe Ora</Label>
-                              <Input
-                                id={`date-${event._id}`}
-                                type="datetime-local"
-                                value={editFormData.date || ""}
-                                onChange={(e) =>
-                                  setEditFormData({ ...editFormData, date: e.target.value })
-                                }
-                                required
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`location-${event._id}`}>Vendndodhja</Label>
-                              <Input
-                                id={`location-${event._id}`}
-                                value={editFormData.location || ""}
-                                onChange={(e) =>
-                                  setEditFormData({ ...editFormData, location: e.target.value })
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`capacity-${event._id}`}>Kapaciteti</Label>
-                              <Input
-                                id={`capacity-${event._id}`}
-                                type="number"
-                                value={editFormData.capacity || ""}
-                                onChange={(e) =>
-                                  setEditFormData({
-                                    ...editFormData,
-                                    capacity: parseInt(e.target.value),
-                                  })
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`category-${event._id}`}>Kategoria</Label>
-                              <Select
-                                value={editFormData.category || ""}
-                                onValueChange={(value) =>
-                                  setEditFormData({ ...editFormData, category: value })
-                                }
-                              >
-                                <SelectTrigger id={`category-${event._id}`}>
-                                  <SelectValue placeholder="Zgjidh kategorinë" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Inxh.Kompjuterike">
-                                    Inxhinieri Kompjuterike
-                                  </SelectItem>
-                                  <SelectItem value="Inxh.Mekanike">Inxhinieri Mekanike</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`image-${event._id}`}>URL e Imazhit</Label>
-                              <Input
-                                id={`image-${event._id}`}
-                                value={editFormData.image || ""}
-                                onChange={(e) =>
-                                  setEditFormData({ ...editFormData, image: e.target.value })
-                                }
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button type="submit">Ruaj ndryshimet</Button>
-                              <Button type="button" variant="outline" onClick={cancelEditing}>
-                                Anulo
-                              </Button>
-                            </div>
-                          </form>
-                        </div>
-                      )}
-                      {selectedEventId === event._id && registrations[event._id] && (
-                        <div className="mt-4 animate-in fade-in duration-300">
-                          <h5 className="font-semibold text-lg mb-2">Regjistrimet për këtë event</h5>
-                          {registrations[event._id].length === 0 ? (
-                            <p className="text-muted-foreground text-center py-4">
-                              Asnjë regjistrim për këtë event.
-                            </p>
+                      <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleRegistrations(event._id)}
+                          className="w-full sm:w-auto"
+                        >
+                          {selectedEventId === event._id ? (
+                            <>
+                              <X className="h-4 w-4 mr-2" />
+                              Mbyll
+                            </>
                           ) : (
-                            <div className="border rounded-lg overflow-hidden">
-                              <div className="grid grid-cols-3 gap-4 bg-gray-50 p-3 font-semibold text-sm text-gray-600">
-                                <span>Emri</span>
-                                <span>Email</span>
-                                <span>Statusi</span>
-                              </div>
-                              {registrations[event._id].map((reg) => (
-                                <div
-                                  key={reg._id}
-                                  className="grid grid-cols-3 gap-4 p-3 border-t items-center"
-                                >
-                                  <span className="text-sm">{reg.user.name}</span>
-                                  <span className="text-sm">{reg.user.email}</span>
+                            <>
+                              <Users className="h-4 w-4 mr-2" />
+                              Shiko Regjistrimet
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditing(event)}
+                          className="w-full sm:w-auto"
+                        >
+                          <PencilLine className="h-4 w-4 mr-2" />
+                          Edito
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(event._id)}
+                          className="w-full sm:w-auto"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Fshi
+                        </Button>
+                      </div>
+                    </div>
+                    {editingEventId === event._id && (
+                      <div className="mt-4 p-4 border rounded-lg bg-white">
+                        <h5 className="font-semibold text-lg sm:text-xl mb-4">Edito Eventin</h5>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleEditSubmit(event._id);
+                          }}
+                          className="space-y-4"
+                        >
+                          <div className="space-y-2">
+                            <Label htmlFor={`title-${event._id}`} className="text-sm sm:text-base">
+                              Titulli
+                            </Label>
+                            <Input
+                              id={`title-${event._id}`}
+                              value={editFormData.title || ""}
+                              onChange={(e) =>
+                                setEditFormData({ ...editFormData, title: e.target.value })
+                              }
+                              required
+                              className="w-full"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`description-${event._id}`} className="text-sm sm:text-base">
+                              Përshkrimi
+                            </Label>
+                            <Input
+                              id={`description-${event._id}`}
+                              value={editFormData.description || ""}
+                              onChange={(e) =>
+                                setEditFormData({ ...editFormData, description: e.target.value })
+                              }
+                              className="w-full"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`date-${event._id}`} className="text-sm sm:text-base">
+                              Data dhe Ora
+                            </Label>
+                            <Input
+                              id={`date-${event._id}`}
+                              type="datetime-local"
+                              value={editFormData.date || ""}
+                              onChange={(e) =>
+                                setEditFormData({ ...editFormData, date: e.target.value })
+                              }
+                              required
+                              className="w-full"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`location-${event._id}`} className="text-sm sm:text-base">
+                              Vendndodhja
+                            </Label>
+                            <Input
+                              id={`location-${event._id}`}
+                              value={editFormData.location || ""}
+                              onChange={(e) =>
+                                setEditFormData({ ...editFormData, location: e.target.value })
+                              }
+                              className="w-full"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`capacity-${event._id}`} className="text-sm sm:text-base">
+                              Kapaciteti
+                            </Label>
+                            <Input
+                              id={`capacity-${event._id}`}
+                              type="number"
+                              value={editFormData.capacity || ""}
+                              onChange={(e) =>
+                                setEditFormData({
+                                  ...editFormData,
+                                  capacity: parseInt(e.target.value),
+                                })
+                              }
+                              className="w-full"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`category-${event._id}`} className="text-sm sm:text-base">
+                              Kategoria
+                            </Label>
+                            <Select
+                              value={editFormData.category || ""}
+                              onValueChange={(value) =>
+                                setEditFormData({ ...editFormData, category: value })
+                              }
+                            >
+                              <SelectTrigger id={`category-${event._id}`} className="w-full">
+                                <SelectValue placeholder="Zgjidh kategorinë" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Inxh.Kompjuterike">
+                                  Inxhinieri Kompjuterike
+                                </SelectItem>
+                                <SelectItem value="Inxh.Mekanike">Inxhinieri Mekanike</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`image-${event._id}`} className="text-sm sm:text-base">
+                              URL e Imazhit
+                            </Label>
+                            <Input
+                              id={`image-${event._id}`}
+                              value={editFormData.image || ""}
+                              onChange={(e) =>
+                                setEditFormData({ ...editFormData, image: e.target.value })
+                              }
+                              className="w-full"
+                            />
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Button type="submit" className="w-full sm:w-auto">Ruaj ndryshimet</Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={cancelEditing}
+                              className="w-full sm:w-auto"
+                            >
+                              Anulo
+                            </Button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
+                    {selectedEventId === event._id && registrations[event._id] && (
+                      <div className="mt-4">
+                        <h5 className="font-semibold text-lg sm:text-xl mb-2">
+                          Regjistrimet për këtë event
+                        </h5>
+                        {registrations[event._id].length === 0 ? (
+                          <p className="text-muted-foreground text-center py-4 text-sm sm:text-base">
+                            Asnjë regjistrim për këtë event.
+                          </p>
+                        ) : (
+                          <div className="border rounded-lg overflow-hidden">
+                            <div className="hidden sm:grid sm:grid-cols-3 gap-4 bg-gray-50 p-3 font-semibold text-sm text-gray-600">
+                              <span>Emri</span>
+                              <span>Email</span>
+                              <span>Statusi</span>
+                            </div>
+                            {registrations[event._id].map((reg) => (
+                              <div
+                                key={reg._id}
+                                className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-4 p-3 border-t sm:items-center"
+                              >
+                                <div className="flex items-center gap-2 sm:gap-0">
+                                  <span className="sm:hidden font-semibold text-sm">Emri:</span>
+                                  <span className="text-sm">{reg.user?.name || "Nuk dihet"}</span>
+                                </div>
+                                <div className="flex items-center gap-2 sm:gap-0">
+                                  <span className="sm:hidden font-semibold text-sm">Email:</span>
+                                  <span className="text-sm">{reg.user?.email || "Nuk dihet"}</span>
+                                </div>
+                                <div className="flex items-center gap-2 sm:gap-0">
+                                  <span className="sm:hidden font-semibold text-sm">Statusi:</span>
                                   <Badge
                                     className={`${getStatusBadgeColor(
                                       reg.status
@@ -530,19 +590,19 @@ export default function ProfilePage() {
                                       : "Anuluar"}
                                   </Badge>
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
