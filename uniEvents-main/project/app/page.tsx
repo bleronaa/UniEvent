@@ -198,7 +198,7 @@ export default function Home() {
                           </div>
                           <div className="flex items-center gap-2 text-gray-600">
                             <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            <span>Organizuar nga: {event.organizer.name}</span>
+                            <span> Organizuar nga: {event.organizer?.name || "I panjohur"}</span>
                           </div>
                         </div>
                         <div className="pt-4 border-t border-gray-100">

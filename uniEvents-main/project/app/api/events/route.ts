@@ -12,6 +12,7 @@ export const config = {
   },
 };
 
+// POST: Create new event
 export async function POST(req: Request) {
   try {
     await dbConnect();
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
       const fileName = uuidv4() + path.extname(file.name);
       const filePath = path.join(process.cwd(), "public", "uploads", fileName);
       await writeFile(filePath, new Uint8Array(buffer));
-      imageUrl = `/uploads/${fileName}`; // për t'u përdorur në frontend
+      imageUrl = `/uploads/${fileName}`;
     }
 
     const newEvent = new Events({
@@ -37,13 +38,16 @@ export async function POST(req: Request) {
         ? Number(formData.get("capacity"))
         : null,
       category: formData.get("category"),
-      organizer: formData.get("organizer"),
+      organizer: formData.get("organizer"), // userId
       image: imageUrl,
     });
 
     await newEvent.save();
 
-    return NextResponse.json(newEvent, { status: 201 });
+    // Populate organizer after saving
+    const populatedEvent = await Events.findById(newEvent._id).populate("organizer", "name");
+
+    return NextResponse.json(populatedEvent, { status: 201 });
   } catch (error) {
     console.error("Error creating event:", error);
     return NextResponse.json(
@@ -53,16 +57,15 @@ export async function POST(req: Request) {
   }
 }
 
-// 2. GET: Fetch all events
+// GET: Fetch all events
 export async function GET(request: Request) {
   try {
     await dbConnect();
 
-    // Fetch all events from the database
-    const events = await Events.find({}).sort({ date: 1 })
+    const events = await Events.find({})
+      .sort({ date: 1 })
       .populate("organizer", "name");
 
-    // Map the events to include the full image URL
     const eventsWithImageUrls = events.map((event) => {
       return {
         ...event.toObject(),
@@ -70,14 +73,16 @@ export async function GET(request: Request) {
       };
     });
 
-    // Send the events with image URLs back to the client
     return NextResponse.json(eventsWithImageUrls, {
       headers: {
-        "Access-Control-Allow-Origin": "http://localhost:3000", // Allow requests from your frontend
+        "Access-Control-Allow-Origin": "http://localhost:3000",
       },
     });
   } catch (error) {
     console.error("Error fetching events:", error);
-    return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch events" },
+      { status: 500 }
+    );
   }
 }

@@ -1,8 +1,8 @@
-
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import User from "../../models/User";
 import { sign } from "jsonwebtoken";
+import { sendEmail } from "@/lib/sendEmail";
 
 export async function POST(request: Request) {
   try {
@@ -35,6 +35,14 @@ export async function POST(request: Request) {
       role: role || "student",
     });
 
+    // Dërgo email falenderues
+    await sendEmail({
+      to: email,
+      subject: "Mirë se vini në UniEvents!",
+      text: `Përshëndetje ${name},\n\nFaleminderit që u regjistruat në UniEvents! Tani mund të hyni dhe të merrni pjesë në eventet tona.\n\nMe respekt,\nEkipi UniEvents`,
+      html: `<h1>Mirë se vini në UniEvents!</h1><p>Përshëndetje ${name},</p><p>Faleminderit që u regjistruat në UniEvents! Tani mund të hyni dhe të merrni pjesë në eventet tona.</p><p>Me respekt,<br>Ekipi UniEvents</p>`,
+    });
+
     // Gjenero JWT token
     const token = sign(
       { userId: user._id, email: user.email, role: user.role },
@@ -55,7 +63,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Gabim gjatë regjistrimit:", error);
     return NextResponse.json(
       { error: "Dështoi regjistrimi i përdoruesit" },
       { status: 500 }

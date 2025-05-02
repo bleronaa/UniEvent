@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +40,29 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
   const [isRegistered, setIsRegistered] = useState(false);
   const [registrationStatus, setRegistrationStatus] = useState<"pending" | "confirmed" | "cancelled" | null>(null);
 
+  // Nxirr funksionin checkRegistration jashtë useEffect
+  async function checkRegistration() {
+    if (!user) {
+      console.log("No user logged in, skipping registration check");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/registrations?eventId=${params.id}`, {
+        headers: getAuthHeader(),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to check registration status");
+      }
+      const data: { isRegistered: boolean; registration: Registration | null } = await res.json();
+      setIsRegistered(data.isRegistered);
+      setRegistrationStatus(data.registration?.status || null);
+    } catch (error) {
+      console.error("Gabim gjatë kontrollit të statusit të regjistrimit:", error);
+      toast.error("Dështoi kontrolli i statusit të regjistrimit");
+    }
+  }
+
   useEffect(() => {
     async function fetchEvent() {
       try {
@@ -65,30 +88,6 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
       }
     }
 
-    async function checkRegistration() {
-      if (!user) {
-        console.log("No user logged in, skipping registration check");
-        return;
-      }
-      try {
-        const res = await fetch(`/api/registrations?eventId=${params.id}`, {
-          headers: getAuthHeader(),
-        });
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to check registration status");
-        }
-        const data: { isRegistered: boolean; registration: Registration | null } = await res.json();
-        console.log("Registration API response:", data); // Debugging
-
-        setIsRegistered(data.isRegistered);
-        setRegistrationStatus(data.registration?.status || null);
-      } catch (error) {
-        console.error("Gabim gjatë kontrollit të statusit të regjistrimit:", error);
-        toast.error("Dështoi kontrolli i statusit të regjistrimit");
-      }
-    }
-
     if (params.id) {
       fetchEvent();
       fetchOtherEvents();
@@ -100,7 +99,6 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
 
   async function handleRegister() {
     if (!user) {
-      // Ridrejto te faqja e logimit me parametrin redirect
       router.push(`/login?redirect=/events/${params.id}`);
       return;
     }
@@ -126,13 +124,18 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.error === "Ju jeni regjistruar më parë") {
+          toast.info("Faleminderit, ju jeni regjistruar më parë!");
+          setIsRegistered(true);
+          await checkRegistration(); // Thirre funksionin këtu
+          return;
+        }
         throw new Error(data.error || "Failed to register");
       }
 
       toast.success("Regjistrimi u krye me sukses");
       setIsRegistered(true);
       setRegistrationStatus("pending");
-      // router.push("/registrations"); // Komento për të qëndruar në faqe
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Dështoi regjistrimi për eventin");
     } finally {
@@ -198,7 +201,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                   <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <User className="h-4 w-4" />
-                    <span>Organizuar nga {event.organizer.name}</span>
+                    <span> Organizuar nga: {event.organizer?.name || "I panjohur"}</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -323,7 +326,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                               <div className="flex items-center gap-2 text-green-600">
                                 <CheckCircle className="h-5 w-5" />
                                 <span>
-                                  Faleminderit, ju jeni regjistruar njëherë! (Statusi:{" "}
+                                  Faleminderit, ju jeni regjistruar më parë! (Statusi:{" "}
                                   {statusTranslations[registrationStatus!] || registrationStatus})
                                 </span>
                               </div>
