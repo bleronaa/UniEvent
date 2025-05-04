@@ -3,9 +3,8 @@ import dbConnect from "@/lib/db";
 import Events from "../models/Events";
 import User from "../models/User";
 import { sendEmail } from "@/lib/sendEmail";
-import path from "path";
-import { writeFile } from "fs/promises";
-import { v4 as uuidv4 } from "uuid";
+import { uploadImage } from "@/lib/cloudinary";
+
 
 // ✅ Konfigurimi modern për App Router
 export const dynamic = 'force-dynamic'; // siguron që API-ja të mos përdorë cache
@@ -64,11 +63,9 @@ export async function POST(req: Request) {
 
     let imageUrl = "";
     if (file) {
-      const buffer = await file.arrayBuffer();
-      const fileName = uuidv4() + path.extname(file.name);
-      const filePath = path.join(process.cwd(), "public", "uploads", fileName);
-      await writeFile(filePath, new Uint8Array(buffer));
-      imageUrl = `/uploads/${fileName}`;
+      // Ngarko imazhin në Cloudinary
+      imageUrl = await uploadImage(file);
+      console.log("Image uploaded to Cloudinary:", imageUrl);
     }
 
     const newEvent = new Events({
@@ -160,7 +157,7 @@ export async function GET(request: Request) {
     const eventsWithImageUrls = events.map((event) => {
       return {
         ...event.toObject(),
-        imageUrl: event.image ? `/uploads/${path.basename(event.image)}` : null,
+        imageUrl: event.image, // URL-të tani vijnë direkt nga Cloudinary
       };
     });
 
