@@ -7,7 +7,7 @@ const EventSchema = new mongoose.Schema({
   description: String,
   date: { type: Date, required: true },
   organizer: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  location: String,
+  location: { type: String, required: true },
   capacity: Number,
   category: {
     type: String,

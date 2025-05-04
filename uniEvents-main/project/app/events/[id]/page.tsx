@@ -358,7 +358,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                             className="w-full"
                             onClick={() => router.push(`/login?redirect=/events/${params.id}`)}
                           >
-                            Hyr për të Regjistruar
+                            Hyr për tu Regjistruar
                           </Button>
                         )}
                       </div>

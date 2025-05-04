@@ -1,6 +1,6 @@
-"use client";
+"use client";  // Kjo duhet të vendoset në fillim të file-it
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -33,13 +33,13 @@ export default function CreateEventPage() {
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState<string | null>(null);
 
-  // Kontroll i hershëm për autentikim
-  if (!user) {
-    router.push("/login");
-    return null; // Kthen null për të shmangur renderimin e panevojshëm
-  }
+  // Kontrollo që kodi po ekzekutohet në shfletues (client-side)
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+    }
+  }, [user, router]);
 
-  // Funksion për të trajtuar ndryshimin e kohës dhe validimin
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -103,7 +103,6 @@ export default function CreateEventPage() {
       setLoading(false);
     }
   }
-
   return (
     <>
       <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-4rem)] py-8">
