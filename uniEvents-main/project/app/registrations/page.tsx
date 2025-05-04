@@ -136,64 +136,65 @@ export default function RegistrationsPage() {
       <div className="container mx-auto py-8 px-4">
         <div className="space-y-6">
           <h1 className="text-3xl font-bold">My Registrations</h1>
+          
           <div className="grid gap-4">
+          {registrations.length === 0 && (
+              <p className="text-muted-foreground">Nuk keni asnjë regjistrim aktiv.</p>
+            )}
             {registrations.map((registration) => {
-              if (!registration.event) return null; // Skip if event is null or undefined
+                if (!registration.event) return null;
+                
 
-              const eventDate = new Date(registration.event.date);
-              const isPast = eventDate < new Date();
+                const eventDate = new Date(registration.event.date);
+                const isPast = eventDate < new Date();
 
-              return (
-                <Card key={registration._id} className="overflow-hidden">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row justify-between gap-4">
-                      <div className="space-y-4">
-                        <h2 className="text-xl font-semibold">{registration.event.title}</h2>
-                        <p className="text-muted-foreground line-clamp-2">{registration.event.description}</p>
-
-                        <div className="grid gap-3">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <CalendarDays className="h-4 w-4" />
-                            <span>{format(eventDate, "EEEE, MMMM d, yyyy 'at' h:mm a")}</span>
-                          </div>
-
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            <span>{registration.event.location}</span>
-                          </div>
-
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Users className="h-4 w-4" />
-                            <span>{`${registration.event.capacity - 1} spots left`}</span>
+                return (
+                  <Card key={registration._id} className="overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col md:flex-row justify-between gap-4">
+                        <div className="space-y-4">
+                          <h2 className="text-xl font-semibold">{registration.event.title}</h2>
+                          <p className="text-muted-foreground line-clamp-2">{registration.event.description}</p>
+              
+                          <div className="grid gap-3">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <CalendarDays className="h-4 w-4" />
+                              <span>{format(eventDate, "EEEE, MMMM d, yyyy 'at' h:mm a")}</span>
+                            </div>
+              
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <MapPin className="h-4 w-4" />
+                              <span>{registration.event.location}</span>
+                            </div>
+              
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Users className="h-4 w-4" />
+                              <span>{`${registration.event.capacity - 1} vende të lira`}</span>
+                            </div>
                           </div>
                         </div>
+              
+                        <div className="flex items-center">
+                          <span
+                            className={`
+                              px-4 py-2 rounded-md text-white text-sm
+                              ${registration.status === "pending" ? "bg-gray-500" : ""}
+                              ${registration.status === "confirmed" ? "bg-green-500" : ""}
+                              ${registration.status === "cancelled" ? "bg-red-500" : ""}
+                            `}
+                          >
+                            {registration.status === "pending"
+                              ? "Në pritje"
+                              : registration.status === "confirmed"
+                              ? "Konfirmuar"
+                              : "Anuluar"}
+                          </span>
+                        </div>
                       </div>
-
-                      <div className="flex items-center">
-                      <Button
-                          onClick={() => registerForEvent(registration.event._id)}
-                          disabled={isPast || registration.status !== "pending"}
-                          className={`
-                            ${registration.status === "pending" ? "bg-gray-500 cursor-not-allowed opacity-50" : ""}
-                            ${registration.status === "confirmed" ? "bg-green-500" : ""}
-                            ${registration.status === "cancelled" ? "bg-red-500" : ""}
-                            text-white
-                          `}
-                        >
-                          {registration.status === "pending"
-                            ? "Në pritje"
-                            : registration.status === "confirmed"
-                            ? "Konfirmuar"
-                            : "Anuluar"}
-                        </Button>
-
-
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    </CardContent>
+                  </Card>
+                );
+              })}
 
           </div>
         </div>

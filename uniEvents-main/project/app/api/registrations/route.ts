@@ -36,7 +36,6 @@ export async function GET(request: Request) {
 
     const token = authHeader.split(" ")[1];
     let decoded: any;
-
     try {
       decoded = verify(token, process.env.JWT_SECRET as string);
       console.log("Token i dekoduar:", decoded);
@@ -57,7 +56,6 @@ export async function GET(request: Request) {
       );
     }
 
-    // Kontrollo për eventId në query
     const url = new URL(request.url);
     const eventId = url.searchParams.get("eventId");
 
@@ -71,7 +69,6 @@ export async function GET(request: Request) {
         );
       }
 
-      // Kontrollo nëse përdoruesi është organizatori ose admin për të marrë të gjitha regjistrimet
       if (event.organizer.toString() === decoded.userId || user.role === "admin") {
         const registrations = await Registrations.find({ event: eventId })
           .populate("user", "name email")
@@ -82,13 +79,16 @@ export async function GET(request: Request) {
         return NextResponse.json(registrations, { headers: corsHeaders });
       }
 
-      // Për përdoruesit jo-admin dhe jo-organizatorë, kthe vetëm regjistrimin e tyre
       const registration = await Registrations.findOne({
         user: decoded.userId,
         event: eventId,
-      })
-        .populate("user", "name email")
-        .populate("event", "title description date location capacity category");
+      }).populate("event", "title");
+
+      console.log(
+        `Kontroll për regjistrim: user=${decoded.userId}, event=${eventId}, isRegistered=${
+          !!registration
+        }, status=${registration ? registration.status : "none"}`
+      );
 
       return NextResponse.json(
         {
@@ -99,7 +99,6 @@ export async function GET(request: Request) {
       );
     }
 
-    // Logjika për marrjen e regjistrimeve të përdoruesit ose të gjitha (për admin)
     let registrations;
     if (user.role === "admin") {
       registrations = await Registrations.find({})
@@ -112,6 +111,12 @@ export async function GET(request: Request) {
         .populate("user", "name email")
         .populate("event", "title description date location capacity category")
         .sort({ createdAt: -1 });
+
+        // Fshij regjistrimet që nuk kanë event (event është fshirë)
+const validRegistrations = registrations.filter((r) => r.event !== null);
+
+// Opsionalisht: fshij nga DB regjistrimet me event null
+await Registrations.deleteMany({ user: decoded.userId, event: null });
       console.log(`Përdoruesi ${user.email} mori ${registrations.length} regjistrime`);
     }
 

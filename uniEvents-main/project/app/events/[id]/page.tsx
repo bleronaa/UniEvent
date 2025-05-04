@@ -40,7 +40,6 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
   const [isRegistered, setIsRegistered] = useState(false);
   const [registrationStatus, setRegistrationStatus] = useState<"pending" | "confirmed" | "cancelled" | null>(null);
 
-  // Nxirr funksionin checkRegistration jashtë useEffect
   async function checkRegistration() {
     if (!user) {
       console.log("No user logged in, skipping registration check");
@@ -52,13 +51,15 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
       });
       if (!res.ok) {
         const errorData = await res.json();
+        console.error("Failed to check registration:", errorData);
         throw new Error(errorData.error || "Failed to check registration status");
       }
       const data: { isRegistered: boolean; registration: Registration | null } = await res.json();
+      console.log("Registration check response:", data);
       setIsRegistered(data.isRegistered);
       setRegistrationStatus(data.registration?.status || null);
     } catch (error) {
-      console.error("Gabim gjatë kontrollit të statusit të regjistrimit:", error);
+      console.error("Error checking registration:", error);
       toast.error("Dështoi kontrolli i statusit të regjistrimit");
     }
   }
@@ -91,7 +92,9 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
     if (params.id) {
       fetchEvent();
       fetchOtherEvents();
-      checkRegistration();
+      if (user) {
+        checkRegistration();
+      }
     }
 
     setLoading(false);
@@ -124,10 +127,10 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
       const data = await res.json();
 
       if (!res.ok) {
-        if (data.error === "Ju jeni regjistruar më parë") {
+        if (data.error === "Je regjistruar tashmë për këtë event") {
           toast.info("Faleminderit, ju jeni regjistruar më parë!");
           setIsRegistered(true);
-          await checkRegistration(); // Thirre funksionin këtu
+          await checkRegistration();
           return;
         }
         throw new Error(data.error || "Failed to register");
@@ -136,6 +139,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
       toast.success("Regjistrimi u krye me sukses");
       setIsRegistered(true);
       setRegistrationStatus("pending");
+      await checkRegistration();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Dështoi regjistrimi për eventin");
     } finally {
@@ -183,7 +187,6 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
   const spotsLeft = hasCapacity ? event.capacity - registrationCount : Infinity;
   const isRegistrationOpen = isUpcoming && (spotsLeft > 0 || !hasCapacity);
 
-  // Përkthime për statusin
   const statusTranslations = {
     pending: "Në pritje",
     confirmed: "Konfirmuar",
@@ -327,7 +330,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                                 <CheckCircle className="h-5 w-5" />
                                 <span>
                                   Faleminderit, ju jeni regjistruar më parë! (Statusi:{" "}
-                                  {statusTranslations[registrationStatus!] || registrationStatus})
+                                  {statusTranslations[registrationStatus!] || registrationStatus || "Në pritje"})
                                 </span>
                               </div>
                               <Button variant="link" asChild>
@@ -364,7 +367,6 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
           </CardContent>
         </Card>
 
-        {/* Other Events Section */}
         {otherEvents.length > 0 && (
           <div className="mt-12">
             <h2 className="text-2xl font-bold mb-4">Evente Tjera</h2>

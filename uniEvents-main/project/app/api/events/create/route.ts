@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
-import Event from "../../models/Events"
+import Event from "../../models/Events";
 import User from "../../models/User";
 import { sendEmail } from "@/lib/sendEmail";
 import mongoose from "mongoose";
@@ -8,12 +8,33 @@ import mongoose from "mongoose";
 export async function POST(request: Request) {
   try {
     await dbConnect();
+    console.log("Database connected for event creation");
 
-    const { title, description, date, location, capacity, category, image } = await request.json();
+    // Merr të dhënat nga FormData
+    const formData = await request.formData();
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const date = formData.get("date") as string;
+    const location = formData.get("location") as string;
+    const capacity = formData.get("capacity") as string;
+    const category = formData.get("category") as string;
+    const image = formData.get("image") as string;
     const userId = request.headers.get("x-user-id");
+
+    console.log("FormData received:", {
+      title,
+      description,
+      date,
+      location,
+      capacity,
+      category,
+      image,
+      userId,
+    });
 
     // Kontrollo nëse userId është i vlefshëm
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      console.error("Invalid userId:", userId);
       return NextResponse.json(
         { error: "ID e përdoruesit e pavlefshme" },
         { status: 400 }
@@ -23,6 +44,7 @@ export async function POST(request: Request) {
     // Kontrollo nëse përdoruesi ekziston
     const organizerUser = await User.findById(userId);
     if (!organizerUser) {
+      console.error("Organizer not found for userId:", userId);
       return NextResponse.json(
         { error: "Organizatori nuk u gjet" },
         { status: 400 }
@@ -32,8 +54,18 @@ export async function POST(request: Request) {
     // Kontrollo nëse kategoria është e vlefshme
     const validCategories = ["Inxh.Kompjuterike", "Inxh.Mekanike"];
     if (!validCategories.includes(category)) {
+      console.error("Invalid category:", category);
       return NextResponse.json(
         { error: "Kategoria e pavlefshme" },
+        { status: 400 }
+      );
+    }
+
+    // Kontrollo nëse të dhënat e nevojshme janë të pranishme
+    if (!title || !date || !location || !category) {
+      console.error("Missing required fields:", { title, date, location, category });
+      return NextResponse.json(
+        { error: "Plotësoni të gjitha fushat e nevojshme" },
         { status: 400 }
       );
     }
@@ -42,29 +74,40 @@ export async function POST(request: Request) {
     const event = await Event.create({
       title,
       description,
-      date,
+      date: new Date(date),
       organizer: userId,
       location,
-      capacity,
+      capacity: parseInt(capacity) || 0,
       category,
       image: image || "",
-      status: "pending", // Statusi i parazgjedhur sipas modelit
+      status: "pending",
     });
+    console.log("Event created with ID:", event._id);
 
     // Merr të gjithë përdoruesit
     const users = await User.find({});
+    console.log("Users found for notification:", users.map(u => u.email));
+    console.log("Number of users to notify:", users.length);
 
-    // Dërgo email njoftues te të gjithë përdoruesit
-    const emailPromises = users.map((user) =>
-      sendEmail({
-        to: user.email,
-        subject: `Event i Ri: ${title}`,
-        text: `Përshëndetje ${user.name},\n\nKemi një event të ri në UniEvents!\n\nTitulli: ${title}\nPërshkrimi: ${description || 'Nuk ka përshkrim'}\nData: ${new Date(date).toLocaleString()}\nVendndodhja: ${location || 'Nuk është specifikuar'}\nKategoria: ${category}\nOrganizatori: ${organizerUser.name}\n\nShpresojmë të shihemi atje!\nEkipi UniEvents`,
-        html: `<h1>Event i Ri: ${title}</h1><p>Përshëndetje ${user.name},</p><p>Kemi një event të ri në UniEvents!</p><p><strong>Titulli:</strong> ${title}<br><strong>Përshkrimi:</strong> ${description || 'Nuk ka përshkrim'}<br><strong>Data:</strong> ${new Date(date).toLocaleString()}<br><strong>Vendndodhja:</strong> ${location || 'Nuk është specifikuar'}<br><strong>Kategoria:</strong> ${category}<br><strong>Organizatori:</strong> ${organizerUser.name}</p><p>Shpresojmë të shihemi atje!</p><p>Ekipi UniEvents</p>`,
-      })
-    );
-
-    await Promise.all(emailPromises);
+    if (users.length === 0) {
+      console.warn("No users found to notify. Email sending skipped.");
+    } else {
+      // Dërgo email njoftues te të gjithë përdoruesit
+      for (const user of users) {
+        try {
+          await sendEmail({
+            to: user.email,
+            subject: `Event i Ri: ${title}`,
+            text: `Përshëndetje ${user.name},\n\nKemi një event të ri në UniEvents!\n\nTitulli: ${title}\nPërshkrimi: ${description || 'Nuk ka përshkrim'}\nData: ${new Date(date).toLocaleString()}\nVendndodhja: ${location || 'Nuk është specifikuar'}\nKategoria: ${category}\nOrganizatori: ${organizerUser.name}\n\nShpresojmë të shihemi atje!\nEkipi UniEvents`,
+            html: `<h1>Event i Ri: ${title}</h1><p>Përshëndetje ${user.name},</p><p>Kemi një event të ri në UniEvents!</p><p><strong>Titulli:</strong> ${title}<br><strong>Përshkrimi:</strong> ${description || 'Nuk ka përshkrim'}<br><strong>Data:</strong> ${new Date(date).toLocaleString()}<br><strong>Vendndodhja:</strong> ${location || 'Nuk është specifikuar'}<br><strong>Kategoria:</strong> ${category}<br><strong>Organizatori:</strong> ${organizerUser.name}</p><p>Shpresojmë të shihemi atje!</p><p>Ekipi UniEvents</p>`,
+          });
+          console.log(`Email sent successfully to: ${user.email}`);
+        } catch (emailError) {
+          console.error(`Failed to send email to ${user.email}:`, emailError);
+        }
+      }
+      console.log("All email sending attempts completed");
+    }
 
     // Popullo organizatorin për përgjigjen
     const populatedEvent = await Event.findById(event._id).populate("organizer", "name");

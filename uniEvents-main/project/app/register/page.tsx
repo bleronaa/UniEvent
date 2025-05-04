@@ -5,142 +5,180 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { UserPlus } from "lucide-react";
-import Link from "next/link";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
 
-export default function RegisterPage() {
+export default function CreateEventPage() {
   const router = useRouter();
-  const { setAuth } = useAuth();
+  const { user, token } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null); // Shto gjendjen për gabimin
+  const [date, setDate] = useState<Date>();
+
+  if (!user) {
+    router.push("/login");
+    return <div className="text-center py-10">Duke të ridrejtuar te login...</div>;
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setError(null); // Pastro gabimin e mëparshëm
 
     const formData = new FormData(event.currentTarget);
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+
+    // Shto datën në formData
+    if (date) {
+      formData.append("date", date.toISOString());
+    } else {
+      toast.error("Ju lutem zgjidhni një datë për eventin");
+      setLoading(false);
+      return;
+    }
+
+    // Shto organizatorin në formData vetëm nëse user ekziston
+    if (user && user.id) {
+      formData.append("organizer", user.id);
+    } else {
+      toast.error("Përdoruesi nuk është i vlefshëm");
+      setLoading(false);
+      return;
+    }
 
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch("/api/events", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-user-id": user.id,
+        },
+        body: formData,
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        // Kontrollo për gabim specifik të email-it jo-@umib.net
-        if (data.error === "Vetëm email-et me @umib.net lejohen për regjistrim.") {
-          setError("Vetëm studentët me email të universitetit mund të regjistrohen");
-        } else {
-          setError(data.error || "Regjistrimi dështoi");
-        }
-        return;
+        throw new Error(data.error || "Dështoi krijimi i eventit");
       }
 
-      setAuth(data.token, data.user);
-      toast.success("Regjistrimi u krye me sukses");
+      toast.success("Eventi u krijua me sukses");
       router.push("/");
-    } catch (error) {
-      setError("Regjistrimi dështoi");
+    } catch (error: any) {
+      toast.error(error.message || "Dështoi krijimi i eventit");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] grid grid-cols-1 md:grid-cols-2">
-      {/* Left side - Image */}
-      <div className="hidden md:block relative bg-gradient-to-br from-primary/10 to-primary/5">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              'url("https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop")',
-            backgroundBlendMode: "overlay",
-            opacity: 0.9,
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/50 to-primary/30 flex flex-col items-center justify-center text-white p-8">
-          <h2 className="text-3xl font-bold mb-4">Bashkohuni me ne</h2>
-          <p className="text-lg text-center max-w-md">
-            Krijo një llogari për të zbuluar dhe marrë pjesë në ngjarje emocionuese të kampusit, për t'u lidhur me bashkëmoshatarët dhe për të qëndruar të përditësuar me aktivitetet e universitetit.
-          </p>
-        </div>
-      </div>
-
-      {/* Right side - Registration Form */}
-      <div className="flex items-center justify-center p-8 bg-background">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-3">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mx-auto mb-2">
-              <UserPlus className="w-8 h-8 text-primary" />
-            </div>
-            <CardTitle className="text-2xl text-center">Krijo llogari</CardTitle>
-            <CardDescription className="text-center">
-              Futni të dhënat tuaja për të krijuar një llogari të re
-            </CardDescription>
+    <>
+      <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-4rem)] py-8">
+        <Card className="w-full max-w-2xl">
+          <CardHeader>
+            <CardTitle>Krijo një event të ri</CardTitle>
+            <CardDescription>Plotësoni detajet për eventin tuaj të ri</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={onSubmit} className="space-y-6">
+            <form onSubmit={onSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Emri</Label>
+                <Label htmlFor="category">Kategoria</Label>
+                <select
+                  id="category"
+                  name="category"
+                  required
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                >
+                  <option value="Inxh.Kompjuterike">Inxh.Kompjuterike</option>
+                  <option value="Inxh.Mekanike">Inxh.Mekanike</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="title">Titulli i eventit</Label>
                 <Input
-                  id="name"
-                  name="name"
-                  type="text"
-                  placeholder="Shkruani emrin tuaj"
-                  className="h-11"
+                  id="title"
+                  name="title"
+                  placeholder="Shkruani titullin e eventit"
                   required
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="Shkruani email-in tuaj"
-                  className="h-11"
+                <Label htmlFor="description">Përshkrimi</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  placeholder="Përshkruani eventin tuaj"
                   required
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="password">Fjalëkalimi</Label>
+                <Label>Data</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, "PPP") : "Zgjedhni datën"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Lokacioni</Label>
                 <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Zgjedhni një fjalëkalim"
-                  className="h-11"
+                  id="location"
+                  name="location"
+                  placeholder="Lokacioni i eventit"
                   required
                 />
               </div>
-              {error && (
-                <p className="text-red-500 text-sm text-center">{error}</p>
-              )}
-              <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading ? "Duke u krijuar..." : "Krijo llogari"}
+
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Kapaciteti</Label>
+                <Input
+                  id="capacity"
+                  name="capacity"
+                  type="number"
+                  min="1"
+                  placeholder="Numri maksimal i pjesëmarrësve"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="image">Ngarko një foto (opsionale)</Label>
+                <Input id="image" name="image" type="file" accept="image/*" />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Duke u krijuar..." : "Krijo eventin"}
               </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                Keni një llogari?{" "}
-                <Link href="/login" className="text-primary hover:underline">
-                  Kyqu
-                </Link>
-              </p>
             </form>
           </CardContent>
         </Card>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }
