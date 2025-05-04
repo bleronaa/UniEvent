@@ -2,26 +2,26 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import User from "../../models/User";
 
-// 1. OPTIONS: për preflight requests
+// Përcakto origin-in dinamikisht bazuar në mjedis
+const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
+  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
+
+// Headers të përbashkët për CORS
+const corsHeaders = {
+  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// 1. OPTIONS: Për preflight requests
 export async function OPTIONS(request: Request) {
   // DEBUG: Shiko çfarë origin-i po vjen nga klienti
   console.log("OPTIONS origin:", request.headers.get("origin"));
 
-  return NextResponse.json(
-    {},
-    {
-      status: 200,
-      headers: {
-        // Hiq “/” në fund
-        "Access-Control-Allow-Origin": "http://localhost:3000/",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
-    }
-  );
+  return NextResponse.json({}, { status: 200, headers: corsHeaders });
 }
 
-// 2. GET: Kthen numrin total të eventeve
+// 2. GET: Kthen numrin total të përdoruesve
 export async function GET(request: Request) {
   try {
     await dbConnect();
@@ -34,17 +34,13 @@ export async function GET(request: Request) {
 
     return NextResponse.json(
       { totalUsers },
-      {
-        headers: {
-          // Hiq “/” këtu gjithashtu
-          "Access-Control-Allow-Origin": "http://localhost:3000",
-        },
-      }
+      { headers: corsHeaders }
     );
   } catch (error) {
+    console.error("Error fetching total users:", error);
     return NextResponse.json(
       { error: "Failed to fetch total users" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

@@ -5,6 +5,23 @@ import User from "../../models/User";
 import { sendEmail } from "@/lib/sendEmail";
 import mongoose from "mongoose";
 
+// Përcakto origin-in dinamikisht bazuar në mjedis
+const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
+  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
+
+// Headers të përbashkët për CORS
+const corsHeaders = {
+  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-user-id",
+};
+
+// 1. Metoda OPTIONS (për preflight requests)
+export async function OPTIONS() {
+  return NextResponse.json({}, { status: 200, headers: corsHeaders });
+}
+
+// 2. POST: Krijo një event të ri
 export async function POST(request: Request) {
   try {
     await dbConnect();
@@ -18,7 +35,7 @@ export async function POST(request: Request) {
     const location = formData.get("location") as string;
     const capacity = formData.get("capacity") as string;
     const category = formData.get("category") as string;
-    const image = formData.get("image") as string;
+    const image = formData.get("image") as string; // Supozohet si string (URL)
     const userId = request.headers.get("x-user-id");
 
     console.log("FormData received:", {
@@ -37,7 +54,7 @@ export async function POST(request: Request) {
       console.error("Invalid userId:", userId);
       return NextResponse.json(
         { error: "ID e përdoruesit e pavlefshme" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -47,7 +64,7 @@ export async function POST(request: Request) {
       console.error("Organizer not found for userId:", userId);
       return NextResponse.json(
         { error: "Organizatori nuk u gjet" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -57,7 +74,7 @@ export async function POST(request: Request) {
       console.error("Invalid category:", category);
       return NextResponse.json(
         { error: "Kategoria e pavlefshme" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -66,7 +83,7 @@ export async function POST(request: Request) {
       console.error("Missing required fields:", { title, date, location, category });
       return NextResponse.json(
         { error: "Plotësoni të gjitha fushat e nevojshme" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -129,16 +146,14 @@ export async function POST(request: Request) {
       },
       {
         status: 201,
-        headers: {
-          "Access-Control-Allow-Origin": "http://localhost:3000",
-        },
+        headers: corsHeaders,
       }
     );
   } catch (error) {
     console.error("Gabim gjatë krijimit të eventit:", error);
     return NextResponse.json(
       { error: "Dështoi krijimi i eventit" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

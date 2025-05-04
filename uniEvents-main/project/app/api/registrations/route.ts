@@ -5,14 +5,18 @@ import User from "../models/User";
 import Events from "../models/Events";
 import { verify } from "jsonwebtoken";
 
+// Përcakto origin-in dinamikisht bazuar në mjedis
+const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
+  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
+
 // Helper: CORS headers
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "http://localhost:3000",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-// OPTIONS: Për kërkesat preflight
+// 1. OPTIONS: Për kërkesat preflight
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -20,7 +24,7 @@ export async function OPTIONS() {
   });
 }
 
-// GET: Merr regjistrimet (për përdorues, admin, ose për një event specifik)
+// 2. GET: Merr regjistrimet (për përdorues, admin, ose për një event specifik)
 export async function GET(request: Request) {
   try {
     await dbConnect();
@@ -112,12 +116,13 @@ export async function GET(request: Request) {
         .populate("event", "title description date location capacity category")
         .sort({ createdAt: -1 });
 
-        // Fshij regjistrimet që nuk kanë event (event është fshirë)
-const validRegistrations = registrations.filter((r) => r.event !== null);
+      // Fshij regjistrimet që nuk kanë event (event është fshirë)
+      const validRegistrations = registrations.filter((r) => r.event !== null);
 
-// Opsionalisht: fshij nga DB regjistrimet me event null
-await Registrations.deleteMany({ user: decoded.userId, event: null });
-      console.log(`Përdoruesi ${user.email} mori ${registrations.length} regjistrime`);
+      // Opsionalisht: fshij nga DB regjistrimet me event null
+      await Registrations.deleteMany({ user: decoded.userId, event: null });
+      console.log(`Përdoruesi ${user.email} mori ${validRegistrations.length} regjistrime`);
+      registrations = validRegistrations;
     }
 
     return NextResponse.json(registrations, { headers: corsHeaders });
@@ -130,7 +135,7 @@ await Registrations.deleteMany({ user: decoded.userId, event: null });
   }
 }
 
-// POST: Regjistro përdoruesin në një event
+// 3. POST: Regjistro përdoruesin në një event
 export async function POST(request: Request) {
   try {
     await dbConnect();

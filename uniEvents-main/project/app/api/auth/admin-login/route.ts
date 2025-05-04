@@ -4,11 +4,15 @@ import User from '@/app/api/models/User';
 import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
 
+const allowedOrigin = process.env.NODE_ENV === "production" 
+  ? "https://uni-event.vercel.app" 
+  : "http://localhost:3000";
+
 export async function OPTIONS() {
   return NextResponse.json({}, { 
     status: 200,
       headers: {
-        "Access-Control-Allow-Origin": "http://localhost:3000", // Correct origin
+        "Access-Control-Allow-Origin": allowedOrigin, // Correct origin
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       },
@@ -68,7 +72,7 @@ export async function POST(request: Request) {
       },
       {
         headers: {
-         "Access-Control-Allow-Origin": "http://localhost:3000", // Allow all origins (change this in production)
+         "Access-Control-Allow-Origin": allowedOrigin, // Allow all origins (change this in production)
          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization"
         }

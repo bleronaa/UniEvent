@@ -4,19 +4,23 @@ import Events from "../../models/Events";
 import User from "../../models/User";
 import { verify } from "jsonwebtoken";
 
+// Përcakto origin-in dinamikisht bazuar në mjedis
+const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
+  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
+
 // CORS headers
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "http://localhost:3000",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Methods": "GET, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-// OPTIONS: Për kërkesat preflight
+// 1. OPTIONS: Për kërkesat preflight
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
-// GET: Merr eventet e një përdoruesi
+// 2. GET: Merr eventet e një përdoruesi
 export async function GET(request: Request) {
   try {
     const userId = new URL(request.url).searchParams.get("user-id");
@@ -40,7 +44,7 @@ export async function GET(request: Request) {
   }
 }
 
-// DELETE: Fshi një event
+// 3. DELETE: Fshi një event
 export async function DELETE(request: Request) {
   try {
     const url = new URL(request.url);
@@ -73,7 +77,7 @@ export async function DELETE(request: Request) {
   }
 }
 
-// PUT: Përditëso një event
+// 4. PUT: Përditëso një event
 export async function PUT(request: Request) {
   try {
     await dbConnect();

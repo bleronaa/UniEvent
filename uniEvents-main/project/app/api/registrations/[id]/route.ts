@@ -5,14 +5,18 @@ import User from "../../models/User";
 import Events from "../../models/Events";
 import { verify } from "jsonwebtoken";
 
+// Përcakto origin-in dinamikisht bazuar në mjedis
+const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
+  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
+
 // Helper: CORS headers
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "http://localhost:3000",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Methods": "PUT, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-// OPTIONS: For preflight requests
+// 1. OPTIONS: Për kërkesat preflight
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -20,7 +24,7 @@ export async function OPTIONS() {
   });
 }
 
-// PUT: Update registration status
+// 2. PUT: Përditëso statusin e regjistrimit
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     await dbConnect();
@@ -57,7 +61,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       );
     }
 
-    // Only admins can update registration status
+    // Vetëm adminët mund të përditësojnë statusin e regjistrimit
     if (user.role !== "admin") {
       console.log(`User ${user.email} is not authorized to update registrations`);
       return NextResponse.json(
@@ -84,7 +88,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       );
     }
 
-    // If status changes to cancelled, decrease registrationCount
+    // Nëse statusi ndryshon në "cancelled", ul numrin e regjistrimeve
     if (status === "cancelled" && registration.status !== "cancelled") {
       const event = await Events.findById(registration.event);
       if (event) {
@@ -94,7 +98,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       }
     }
 
-    // If status changes from cancelled to confirmed or pending, increase registrationCount
+    // Nëse statusi ndryshon nga "cancelled" në "confirmed" ose "pending", rrit numrin e regjistrimeve
     if (registration.status === "cancelled" && (status === "confirmed" || status === "pending")) {
       const event = await Events.findById(registration.event);
       if (event && event.registrationCount < event.capacity) {
@@ -113,7 +117,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     registration.status = status;
     await registration.save();
 
-    // Populate user and event fields in the response
+    // Popullo fushat user dhe event në përgjigje
     const updatedRegistration = await Registrations.findById(params.id)
       .populate("user", "name email")
       .populate("event", "title description date location capacity category");

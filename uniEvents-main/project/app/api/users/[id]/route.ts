@@ -3,19 +3,20 @@ import dbConnect from "@/lib/db";
 import User from "../../models/User";
 import mongoose from "mongoose";
 
+// Përcakto origin-in dinamikisht bazuar në mjedis
+const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
+  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
+
+// Headers të përbashkët për CORS
+const corsHeaders = {
+  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-user-id",
+};
+
 // 1. Metoda OPTIONS (për kërkesa Preflight)
 export async function OPTIONS() {
-  return NextResponse.json(
-    {},
-    {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": "http://localhost:3000",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
-    }
-  );
+  return NextResponse.json({}, { status: 200, headers: corsHeaders });
 }
 
 // 2. GET: Merr një përdorues sipas ID-së
@@ -29,7 +30,7 @@ export async function GET(
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
         { error: "ID e përdoruesit është e pavlefshme" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -37,20 +38,16 @@ export async function GET(
     if (!user) {
       return NextResponse.json(
         { error: "Përdoruesi nuk u gjet" },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       );
     }
 
-    return NextResponse.json(user, {
-      headers: {
-        "Access-Control-Allow-Origin": "http://localhost:3000",
-      },
-    });
+    return NextResponse.json(user, { headers: corsHeaders });
   } catch (error) {
     console.error("Gabim gjatë marrjes së përdoruesit:", error);
     return NextResponse.json(
       { error: "Dështoi marrja e përdoruesit" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -68,7 +65,14 @@ export async function PUT(
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
         { error: "ID e përdoruesit është e pavlefshme" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return NextResponse.json(
+        { error: "ID e përdoruesit në header është e pavlefshme" },
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -76,7 +80,7 @@ export async function PUT(
     if (!data.name || !data.email) {
       return NextResponse.json(
         { error: "Emri dhe email janë të nevojshme" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -84,7 +88,15 @@ export async function PUT(
     if (!user) {
       return NextResponse.json(
         { error: "Përdoruesi nuk u gjet" },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
+    // Kontrollo nëse përdoruesi ka autorizim (vetëm përdoruesi vetë mund të përditësojë profilin e tij)
+    if (userId !== params.id) {
+      return NextResponse.json(
+        { error: "Nuk ke autorizim për të përditësuar këtë përdorues" },
+        { status: 403, headers: corsHeaders }
       );
     }
 
@@ -92,18 +104,21 @@ export async function PUT(
     const updatedUser = await User.findByIdAndUpdate(params.id, data, {
       new: true,
       strictPopulate: false,
-    })
-
-    return NextResponse.json(updatedUser, {
-      headers: {
-        "Access-Control-Allow-Origin": "http://localhost:3000",
-      },
     });
+
+    if (!updatedUser) {
+      return NextResponse.json(
+        { error: "Dështoi përditësimi i përdoruesit" },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    return NextResponse.json(updatedUser, { headers: corsHeaders });
   } catch (error) {
     console.error("Gabim gjatë përditësimit të përdoruesit:", error);
     return NextResponse.json(
       { error: "Dështoi përditësimi i përdoruesit" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -120,7 +135,14 @@ export async function DELETE(
     if (!mongoose.Types.ObjectId.isValid(params.id)) {
       return NextResponse.json(
         { error: "ID e përdoruesit është e pavlefshme" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return NextResponse.json(
+        { error: "ID e përdoruesit në header është e pavlefshme" },
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -128,7 +150,15 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json(
         { error: "Përdoruesi nuk u gjet" },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
+    // Kontrollo nëse përdoruesi ka autorizim (vetëm përdoruesi vetë mund të fshijë profilin e tij)
+    if (userId !== params.id) {
+      return NextResponse.json(
+        { error: "Nuk ke autorizim për të fshirë këtë përdorues" },
+        { status: 403, headers: corsHeaders }
       );
     }
 
@@ -136,17 +166,13 @@ export async function DELETE(
 
     return NextResponse.json(
       { message: "Përdoruesi u fshi me sukses" },
-      {
-        headers: {
-          "Access-Control-Allow-Origin": "http://localhost:3000",
-        },
-      }
+      { headers: corsHeaders }
     );
   } catch (error) {
     console.error("Gabim gjatë fshirjes së përdoruesit:", error);
     return NextResponse.json(
       { error: "Dështoi fshirja e përdoruesit" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -160,7 +186,7 @@ export async function POST(request: Request) {
     if (!data.name || !data.email || !data.role) {
       return NextResponse.json(
         { error: "Emri, email dhe roli janë të nevojshme" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -168,7 +194,7 @@ export async function POST(request: Request) {
     if (existingUser) {
       return NextResponse.json(
         { error: "Përdoruesi me këtë email ekziston tashmë" },
-        { status: 409 }
+        { status: 409, headers: corsHeaders }
       );
     }
 
@@ -176,15 +202,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newUser, {
       status: 201,
-      headers: {
-        "Access-Control-Allow-Origin": "http://localhost:3000",
-      },
+      headers: corsHeaders,
     });
   } catch (error) {
     console.error("Gabim gjatë krijimit të përdoruesit:", error);
     return NextResponse.json(
       { error: "Dështoi krijimi i përdoruesit" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

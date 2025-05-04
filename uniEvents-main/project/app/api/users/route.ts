@@ -2,14 +2,18 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import User from "@/app/api/models/User";
 
+// Përcakto origin-in dinamikisht bazuar në mjedis
+const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
+  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
+
 // Handle CORS in a reusable way
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "http://localhost:3000",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-// OPTIONS
+// 1. OPTIONS: Për kërkesat preflight
 export async function OPTIONS() {
   return NextResponse.json({}, {
     status: 200,
@@ -17,7 +21,7 @@ export async function OPTIONS() {
   });
 }
 
-// GET all users
+// 2. GET: Merr të gjithë përdoruesit
 export async function GET(request: Request) {
   try {
     await dbConnect();
@@ -26,14 +30,14 @@ export async function GET(request: Request) {
     return NextResponse.json(users, { headers: corsHeaders });
   } catch (error) {
     console.error("GET error:", error);
-    return NextResponse.json({ error: "Failed to fetch users" }, {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return NextResponse.json(
+      { error: "Failed to fetch users" },
+      { status: 500, headers: corsHeaders }
+    );
   }
 }
 
-// POST new user
+// 3. POST: Shto një përdorues të ri
 export async function POST(request: Request) {
   try {
     await dbConnect();
@@ -41,15 +45,15 @@ export async function POST(request: Request) {
     const newUser = new User(body);
     await newUser.save();
 
-    return NextResponse.json({ message: "User added successfully", user: newUser }, {
-      status: 201,
-      headers: corsHeaders,
-    });
+    return NextResponse.json(
+      { message: "User added successfully", user: newUser },
+      { status: 201, headers: corsHeaders }
+    );
   } catch (error) {
     console.error("POST error:", error);
-    return NextResponse.json({ error: "Failed to add user" }, {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return NextResponse.json(
+      { error: "Failed to add user" },
+      { status: 500, headers: corsHeaders }
+    );
   }
 }
