@@ -17,12 +17,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-// Konfigurimi për API (për të trajtuar formData)
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+
+ // ✅ Konfigurimi modern për App Router
+ export const dynamic = 'force-dynamic'; // siguron që API-ja të mos përdorë cache
 
 // 1. Metoda OPTIONS (për preflight requests)
 export async function OPTIONS() {
