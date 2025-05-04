@@ -45,7 +45,7 @@ export const useAuth = create<AuthState>()(
       logout: () => {
         set({ token: null, user: null, isAuthenticated: false });
         localStorage.removeItem("token");
-        window.location.href = "/login";
+        // Navigimi do të trajtohet nga komponenti që thërret logout
       },
 
       getAuthHeader: () => {

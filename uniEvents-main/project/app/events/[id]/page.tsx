@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,7 @@ interface Registration {
 
 export default function EventDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, getAuthHeader } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -149,13 +150,15 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
 
   async function handleShare() {
     try {
+      const shareUrl = `${window.location.origin}${pathname}`;
       await navigator.share({
         title: event?.title,
         text: event?.description,
-        url: window.location.href,
+        url: shareUrl,
       });
     } catch (error) {
-      navigator.clipboard.writeText(window.location.href);
+      const shareUrl = `${window.location.origin}${pathname}`;
+      await navigator.clipboard.writeText(shareUrl);
       toast.success("Linku i eventit u kopjua në clipboard");
     }
   }
