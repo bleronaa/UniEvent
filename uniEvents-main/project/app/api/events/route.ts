@@ -7,11 +7,8 @@ import path from "path";
 import { writeFile } from "fs/promises";
 import { v4 as uuidv4 } from "uuid";
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// ✅ Konfigurimi modern për App Router
+export const dynamic = 'force-dynamic'; // siguron që API-ja të mos përdorë cache
 
 // POST: Create new event
 export async function POST(req: Request) {
@@ -39,7 +36,6 @@ export async function POST(req: Request) {
       organizer,
     });
 
-    // Kontrollo nëse të dhënat e nevojshme janë të pranishme
     if (!title || !date || !location || !category || !organizer) {
       console.error("Missing required fields:", { title, date, location, category, organizer });
       return NextResponse.json(
@@ -48,7 +44,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Kontrollo nëse organizatori ekziston
     const organizerUser = await User.findById(organizer);
     if (!organizerUser) {
       console.error("Organizer not found for userId:", organizer);
@@ -58,7 +53,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Kontrollo nëse kategoria është e vlefshme
     const validCategories = ["Inxh.Kompjuterike", "Inxh.Mekanike"];
     if (!validCategories.includes(category)) {
       console.error("Invalid category:", category);
@@ -68,7 +62,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Trajto ngarkimin e imazhit
     let imageUrl = "";
     if (file) {
       const buffer = await file.arrayBuffer();
@@ -78,7 +71,6 @@ export async function POST(req: Request) {
       imageUrl = `/uploads/${fileName}`;
     }
 
-    // Krijo eventin e ri
     const newEvent = new Events({
       title,
       description,
@@ -94,15 +86,11 @@ export async function POST(req: Request) {
     await newEvent.save();
     console.log("Event created with ID:", newEvent._id);
 
-    // Merr të gjithë përdoruesit për njoftim
     const users = await User.find({});
     console.log("Users found for notification:", users.map((u) => u.email));
     console.log("Number of users to notify:", users.length);
 
-    if (users.length === 0) {
-      console.warn("No users found to notify. Email sending skipped.");
-    } else {
-      // Dërgo email njoftues te të gjithë përdoruesit paralelisht
+    if (users.length > 0) {
       const emailPromises = users.map((user) =>
         sendEmail({
           to: user.email,
@@ -124,12 +112,9 @@ export async function POST(req: Request) {
       const failedEmails = emailResults.filter((result) => result.status === "failed");
       if (failedEmails.length > 0) {
         console.warn("Some emails failed to send:", failedEmails);
-      } else {
-        console.log("All emails sent successfully");
       }
     }
 
-    // Popullo organizatorin për përgjigjen
     const populatedEvent = await Events.findById(newEvent._id).populate("organizer", "name");
 
     return NextResponse.json(
