@@ -4,29 +4,18 @@ import Registrations from "../models/Registrations";
 import User from "../models/User";
 import Events from "../models/Events";
 import { verify } from "jsonwebtoken";
+import { cors, runMiddleware } from "@/lib/cors"; // Importo middleware-in e CORS
 
-// Përcakto origin-in dinamikisht bazuar në mjedis
-const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
-  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
-
-// Helper: CORS headers
-const corsHeaders = {
-  "Access-Control-Allow-Origin": allowedOrigin,
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
-
-// 1. OPTIONS: Për kërkesat preflight
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
+  // Middleware-i trajton preflight request-et
+  return NextResponse.json({}, { status: 204 });
 }
 
-// 2. GET: Merr regjistrimet (për përdorues, admin, ose për një event specifik)
 export async function GET(request: Request) {
   try {
+    // Ekzekuto middleware-in e CORS
+    await runMiddleware(request, NextResponse.next(), cors);
+
     await dbConnect();
 
     const authHeader = request.headers.get("Authorization");
@@ -34,7 +23,7 @@ export async function GET(request: Request) {
       console.log("Mungon token-i i autorizimit");
       return NextResponse.json(
         { error: "Mungon token-i i autorizimit" },
-        { status: 401, headers: corsHeaders }
+        { status: 401 }
       );
     }
 
@@ -47,7 +36,7 @@ export async function GET(request: Request) {
       console.log("Token i pavlefshëm ose i skaduar:", err);
       return NextResponse.json(
         { error: "Token i pavlefshëm ose i skaduar" },
-        { status: 401, headers: corsHeaders }
+        { status: 401 }
       );
     }
 
@@ -56,7 +45,7 @@ export async function GET(request: Request) {
       console.log("Përdoruesi nuk u gjet për ID:", decoded.userId);
       return NextResponse.json(
         { error: "Përdoruesi nuk u gjet" },
-        { status: 404, headers: corsHeaders }
+        { status: 404 }
       );
     }
 
@@ -69,7 +58,7 @@ export async function GET(request: Request) {
         console.log("Eventi nuk u gjet për ID:", eventId);
         return NextResponse.json(
           { error: "Eventi nuk u gjet" },
-          { status: 404, headers: corsHeaders }
+          { status: 404 }
         );
       }
 
@@ -80,7 +69,7 @@ export async function GET(request: Request) {
           .sort({ createdAt: -1 });
 
         console.log(`U morën ${registrations.length} regjistrime për eventin ${eventId}`);
-        return NextResponse.json(registrations, { headers: corsHeaders });
+        return NextResponse.json(registrations);
       }
 
       const registration = await Registrations.findOne({
@@ -94,13 +83,10 @@ export async function GET(request: Request) {
         }, status=${registration ? registration.status : "none"}`
       );
 
-      return NextResponse.json(
-        {
-          isRegistered: !!registration,
-          registration: registration ? { status: registration.status } : null,
-        },
-        { headers: corsHeaders }
-      );
+      return NextResponse.json({
+        isRegistered: !!registration,
+        registration: registration ? { status: registration.status } : null,
+      });
     }
 
     let registrations;
@@ -116,28 +102,27 @@ export async function GET(request: Request) {
         .populate("event", "title description date location capacity category")
         .sort({ createdAt: -1 });
 
-      // Fshij regjistrimet që nuk kanë event (event është fshirë)
       const validRegistrations = registrations.filter((r) => r.event !== null);
-
-      // Opsionalisht: fshij nga DB regjistrimet me event null
       await Registrations.deleteMany({ user: decoded.userId, event: null });
       console.log(`Përdoruesi ${user.email} mori ${validRegistrations.length} regjistrime`);
       registrations = validRegistrations;
     }
 
-    return NextResponse.json(registrations, { headers: corsHeaders });
+    return NextResponse.json(registrations);
   } catch (error) {
     console.error("Gabim gjatë marrjes së regjistrimeve:", error);
     return NextResponse.json(
       { error: "Nuk u morën dot regjistrimet" },
-      { status: 500, headers: corsHeaders }
+      { status: 500 }
     );
   }
 }
 
-// 3. POST: Regjistro përdoruesin në një event
 export async function POST(request: Request) {
   try {
+    // Ekzekuto middleware-in e CORS
+    await runMiddleware(request, NextResponse.next(), cors);
+
     await dbConnect();
 
     const { eventId } = await request.json();
@@ -145,7 +130,7 @@ export async function POST(request: Request) {
       console.log("Mungon ID e eventit");
       return NextResponse.json(
         { error: "ID e eventit është e nevojshme" },
-        { status: 400, headers: corsHeaders }
+        { status: 400 }
       );
     }
 
@@ -154,13 +139,12 @@ export async function POST(request: Request) {
       console.log("Mungon token-i i autorizimit");
       return NextResponse.json(
         { error: "Mungon token-i i autorizimit" },
-        { status: 401, headers: corsHeaders }
+        { status: 401 }
       );
     }
 
     const token = authHeader.split(" ")[1];
     let decoded: any;
-
     try {
       decoded = verify(token, process.env.JWT_SECRET as string);
       console.log("Token i dekoduar:", decoded);
@@ -168,7 +152,7 @@ export async function POST(request: Request) {
       console.log("Token i pavlefshëm ose i skaduar:", err);
       return NextResponse.json(
         { error: "Token i pavlefshëm ose i skaduar" },
-        { status: 401, headers: corsHeaders }
+        { status: 401 }
       );
     }
 
@@ -177,7 +161,7 @@ export async function POST(request: Request) {
       console.log("Përdoruesi nuk u gjet për ID:", decoded.userId);
       return NextResponse.json(
         { error: "Përdoruesi nuk u gjet" },
-        { status: 404, headers: corsHeaders }
+        { status: 404 }
       );
     }
 
@@ -186,7 +170,7 @@ export async function POST(request: Request) {
       console.log("Eventi nuk u gjet për ID:", eventId);
       return NextResponse.json(
         { error: "Eventi nuk u gjet" },
-        { status: 404, headers: corsHeaders }
+        { status: 404 }
       );
     }
 
@@ -194,7 +178,7 @@ export async function POST(request: Request) {
       console.log("Eventi është i plotë:", eventId);
       return NextResponse.json(
         { error: "Eventi është i plotë" },
-        { status: 400, headers: corsHeaders }
+        { status: 400 }
       );
     }
 
@@ -207,7 +191,7 @@ export async function POST(request: Request) {
       console.log(`Përdoruesi ${user.email} është regjistruar tashmë për eventin ${eventId}`);
       return NextResponse.json(
         { error: "Je regjistruar tashmë për këtë event" },
-        { status: 400, headers: corsHeaders }
+        { status: 400 }
       );
     }
 
@@ -229,13 +213,13 @@ export async function POST(request: Request) {
         message: "Regjistrimi u krye me sukses",
         registration: newRegistration,
       },
-      { status: 201, headers: corsHeaders }
+      { status: 201 }
     );
   } catch (error) {
     console.error("Gabim gjatë regjistrimit për eventin:", error);
     return NextResponse.json(
       { error: "Nuk u krye dot regjistrimi për eventin" },
-      { status: 500, headers: corsHeaders }
+      { status: 500 }
     );
   }
 }
