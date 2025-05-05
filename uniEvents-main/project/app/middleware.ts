@@ -1,15 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import Cors from "cors";
 
-// Përcakto origin bazuar në mjedis (development ose production)
-const allowedOrigin = process.env.NODE_ENV === "production" 
-  ? "https://uni-event.vercel.app" 
-  : "http://localhost:3000";
-
+// Përdorim true për të lejuar të gjitha originat
 const cors = Cors({
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  origin: allowedOrigin,
-  optionsSuccessStatus: 200,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  origin: true, // Lejo të gjitha originat
+  credentials: true,
 });
 
 function runMiddleware(req: NextApiRequest, res: NextApiResponse, fn: any) {

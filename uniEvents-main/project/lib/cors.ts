@@ -1,28 +1,26 @@
-import Cors from 'cors';
+import Cors from "cors";
+import { NextApiRequest, NextApiResponse } from "next";
 
-// Përcakto origin-in dinamikisht bazuar në mjedis
-const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
-  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
-
-// Konfiguroni CORS
-export const cors = Cors({
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  origin: allowedOrigin, // Përdor origin-in dinamik
-  credentials: true, // Opsionale: nëse përdorni kredenciale (cookies, Authorization headers)
+// Përdorim true për të lejuar të gjitha originat
+const cors = Cors({
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  origin: true, // Lejo të gjitha originat
+  credentials: true,
 });
 
-// Përdorni këtë helper për të drejtuar kërkesat përmes CORS middleware
-export const runMiddleware = (
-  req: any,
-  res: any,
-  fn: (req: any, res: any, next: (result?: any) => void) => void
-): Promise<any> => {
+export function runMiddleware(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  fn: Function
+) {
   return new Promise((resolve, reject) => {
-    fn(req, res, (result) => {
+    fn(req, res, (result: unknown) => {
       if (result instanceof Error) {
         return reject(result);
       }
       return resolve(result);
     });
   });
-};
+}
+
+export default cors;

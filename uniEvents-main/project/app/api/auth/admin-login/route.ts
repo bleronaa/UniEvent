@@ -4,18 +4,17 @@ import User from '@/app/api/models/User';
 import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
 
-const allowedOrigin = process.env.NODE_ENV === "production" 
-  ? "https://uni-event.vercel.app" 
-  : "http://localhost:3000";
+// Lejo të gjitha originat
+const allowedOrigin = "*"; // Lejon të gjitha originat
 
 export async function OPTIONS() {
   return NextResponse.json({}, { 
     status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": allowedOrigin, // Correct origin
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      },
+    headers: {
+      "Access-Control-Allow-Origin": allowedOrigin, // Lejo të gjitha originat
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
   });
 }
 
@@ -72,9 +71,9 @@ export async function POST(request: Request) {
       },
       {
         headers: {
-         "Access-Control-Allow-Origin": allowedOrigin, // Allow all origins (change this in production)
+         "Access-Control-Allow-Origin": allowedOrigin, // Lejo të gjitha originat
          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization"
+         "Access-Control-Allow-Headers": "Content-Type, Authorization"
         }
       }
     );

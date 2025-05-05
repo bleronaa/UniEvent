@@ -3,9 +3,7 @@ import dbConnect from "@/lib/db";
 import Events from "../../models/Events";
 
 // Përcakto origin-in dinamikisht bazuar në mjedis
-const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
-  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
-
+const allowedOrigin ="*"
 // Headers të përbashkët për CORS
 const corsHeaders = {
   "Access-Control-Allow-Origin": allowedOrigin,
