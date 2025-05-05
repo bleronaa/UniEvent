@@ -6,7 +6,7 @@ import { verify } from "jsonwebtoken";
 
 // Përcakto origin-in dinamikisht bazuar në mjedis
 const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
-  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3001");
+  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
 
 // CORS headers
 const corsHeaders = {

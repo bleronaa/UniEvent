@@ -1,31 +1,17 @@
 import Cors from 'cors';
 
-// Lista e origjinave të lejuara
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : [
-      process.env.NODE_ENV === 'production' ? 'https://uni-event.vercel.app' : 'http://localhost:3001',
-      'https://adminevents.vercel.app', // Shto origjinën e frontend-it të adminit
-      'http://localhost:3000', // Opsionale: për zhvillim lokal të adminit
-    ];
+// Përcakto origin-in dinamikisht bazuar në mjedis
+const allowedOrigin = process.env.NEXT_PUBLIC_ALLOWED_ORIGIN ||
+  (process.env.NODE_ENV === "production" ? "https://uni-event.vercel.app" : "http://localhost:3000");
 
 // Konfiguroni CORS
 export const cors = Cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  origin: (origin, callback) => {
-    // Debugging: Shiko origjinën e request-it
-    console.log('Request Origin:', origin);
-    // Lejo origjina të specifikuara ose request-et pa origjinë (si Postman)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true, // Aktivizo për kredenciale (cookies, headers)
+  origin: allowedOrigin, // Përdor origin-in dinamik
+  credentials: true, // Opsionale: nëse përdorni kredenciale (cookies, Authorization headers)
 });
 
-// Helper për të ekzekutuar middleware
+// Përdorni këtë helper për të drejtuar kërkesat përmes CORS middleware
 export const runMiddleware = (
   req: any,
   res: any,
