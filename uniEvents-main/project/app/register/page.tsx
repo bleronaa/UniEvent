@@ -40,6 +40,12 @@ export default function RegisterPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
+    if (password.length < 8) {
+      setError("Fjalëkalimi duhet të ketë të paktën 8 karaktere.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",

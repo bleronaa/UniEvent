@@ -133,9 +133,9 @@ export default function RegistrationsPage() {
 
   return (
     <>
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-8 px-4  mt-16">
         <div className="space-y-6">
-          <h1 className="text-3xl font-bold">My Registrations</h1>
+          <h1 className="text-3xl font-bold">Lista e regjistrimeve që keni bërë</h1>
           
           <div className="grid gap-4">
           {registrations.length === 0 && (

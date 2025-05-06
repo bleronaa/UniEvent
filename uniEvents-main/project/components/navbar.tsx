@@ -59,7 +59,7 @@ export function Navbar() {
                   <NavigationMenuItem>
                     <Link href="/registrations" legacyBehavior passHref>
                       <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                        Regjistrimet e mia
+                        Regjistrimet
                       </NavigationMenuLink>
                     </Link>
                   </NavigationMenuItem>

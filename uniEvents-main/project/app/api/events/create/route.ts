@@ -92,7 +92,9 @@ export async function POST(request: Request) {
       date: new Date(date),
       organizer: userId,
       location,
-      capacity: parseInt(capacity) || 0,
+     // Vendos kapacitetin vetëm nëse është dhënë (opsional)
+      capacity: capacity ? parseInt(capacity) : undefined,
+
       category,
       image: image || "",
       status: "pending",

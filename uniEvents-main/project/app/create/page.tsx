@@ -1,4 +1,4 @@
-"use client";  // Kjo duhet të vendoset në fillim të file-it
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -15,41 +15,40 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { Footer } from "@/components/footer";
 
 export default function CreateEventPage() {
   const router = useRouter();
   const { user, token } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [date, setDate] = useState<Date>();
-  const [time, setTime] = useState<string | null>(null);
+  const [datetime, setDatetime] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [formValues, setFormValues] = useState({
+    title: "",
+    category: "",
+    location: "",
+  });
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+  
+    setFormValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
+  };
+  
 
-  // Kontrollo që kodi po ekzekutohet në shfletues (client-side)
   useEffect(() => {
     if (!user) {
       router.push("/login");
     }
   }, [user, router]);
-
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (timeRegex.test(value) || value === "") {
-      setTime(value);
-    } else {
-      setTime(null);
-      toast.error("Ju lutem vendosni një kohë të vlefshme (HH:mm)");
-    }
-  };
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,18 +56,34 @@ export default function CreateEventPage() {
 
     const formData = new FormData(event.currentTarget);
 
-    // Kombino datën dhe kohën në një datë të vetme
-    if (date && time) {
-      const [hours, minutes] = time.split(":").map(Number);
-      const fullDate = new Date(date);
-      fullDate.setHours(hours);
-      fullDate.setMinutes(minutes);
-      formData.append("date", fullDate.toISOString());
+    const title = formData.get("title")?.toString().trim();
+    const category = formData.get("category")?.toString().trim();
+    const location = formData.get("location")?.toString().trim();
+
+    const newErrors: { [key: string]: string } = {};
+    if (!category) newErrors.category = "Ju lutem zgjidhni një kategori";
+    if (!title) newErrors.title = "Ju lutem plotësoni titullin";
+    if (!location) newErrors.location = "Ju lutem plotësoni lokacionin";
+
+    if (!datetime) {
+      newErrors.datetime = "Ju lutem zgjidhni datën dhe kohën për eventin";
     } else {
-      toast.error("Ju lutem zgjidhni datën dhe kohën për eventin");
+      const fullDate = new Date(datetime);
+      if (isNaN(fullDate.getTime())) {
+        newErrors.datetime = "Ju lutem vendosni një datë dhe kohë të vlefshme";
+      } else {
+        formData.append("date", fullDate.toISOString());
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error("Ju lutem plotësoni të gjitha fushat e nevojshme");
       setLoading(false);
       return;
     }
+
+    setErrors({}); // pastrimi i gabimeve
 
     if (user && user.id) {
       formData.append("organizer", user.id);
@@ -103,9 +118,10 @@ export default function CreateEventPage() {
       setLoading(false);
     }
   }
+
   return (
     <>
-      <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-4rem)] py-8">
+      <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-4rem)] py-8 ">
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle>Krijo një event të ri</CardTitle>
@@ -120,12 +136,17 @@ export default function CreateEventPage() {
                 <select
                   id="category"
                   name="category"
-                  required
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  value={formValues.category}
+                  onChange={handleInputChange}
                 >
+                  <option value="">-- Zgjidh kategorinë --</option>
                   <option value="Inxh.Kompjuterike">Inxh.Kompjuterike</option>
                   <option value="Inxh.Mekanike">Inxh.Mekanike</option>
                 </select>
+                {errors.category && (
+                  <p className="text-red-500 text-sm">{errors.category}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -134,8 +155,12 @@ export default function CreateEventPage() {
                   id="title"
                   name="title"
                   placeholder="Shkruani titullin e eventit"
-                  required
+                  value={formValues.title}
+                  onChange={handleInputChange}
                 />
+                {errors.title && (
+                  <p className="text-red-500 text-sm">{errors.title}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -148,42 +173,23 @@ export default function CreateEventPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Data</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : "Zgjedhni datën"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="time">Koha</Label>
+                <Label htmlFor="datetime">Data dhe Koha</Label>
                 <Input
-                  id="time"
-                  type="time"
-                  value={time || ""}
-                  onChange={handleTimeChange}
-                  placeholder="HH:mm"
-                  required
+                  id="datetime"
+                  name="datetime"
+                  type="datetime-local"
+                  value={datetime || ""}
+                  onChange={(e) => {
+                    setDatetime(e.target.value);
+                    setErrors((prev) => ({ ...prev, datetime: "" }));
+                  }}
+                  min={new Date().toISOString().slice(0, 16)}
                   className="w-full transition-all duration-200 focus:ring-2 focus:ring-primary focus:border-primary"
                 />
+
+                {errors.datetime && (
+                  <p className="text-red-500 text-sm">{errors.datetime}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -192,8 +198,12 @@ export default function CreateEventPage() {
                   id="location"
                   name="location"
                   placeholder="Lokacioni i eventit"
-                  required
+                  value={formValues.location}
+                  onChange={handleInputChange}
                 />
+                {errors.location && (
+                  <p className="text-red-500 text-sm">{errors.location}</p>
+                )}
               </div>
 
               <div className="space-y-2">

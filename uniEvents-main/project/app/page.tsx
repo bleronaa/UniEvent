@@ -34,7 +34,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     async function fetchEvents() {
@@ -67,27 +66,16 @@ export default function Home() {
               Mikpritës, Ndërlidhës dhe Inspirues
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-700">
-              Organizo dhe eksploro aktivitete që lidhin studentët, klubet dhe fakultetet, duke sjellë ide dhe mundësi të reja për të gjithë komunitetin universitar.
-            </p>
-            {showMore && (
-              <div className="space-y-3 text-sm sm:text-base md:text-lg text-gray-600">
-                <p>
-                  Me anë të platformës sonë, studentët mund të zbulojnë ngjarje të rëndësishme, të krijojnë lidhje me bashkëmoshatarët dhe të angazhohen në aktivitete që pasurojnë jetën universitare.
+              Organizo dhe eksploro aktivitete që lidhin studentët, klubet dhe fakultetet, duke sjellë ide dhe mundësi të reja për të gjithë komunitetin universitar.<br></br>
+              Me anë të platformës sonë, studentët mund të zbulojnë ngjarje të rëndësishme, të krijojnë lidhje me bashkëmoshatarët dhe të angazhohen në aktivitete që pasurojnë jetën universitare.<br></br>
+              Pavarësisht nëse je pjesë e një klubi apo thjesht dëshiron të marrësh pjesë në një event, ne të ndihmojmë të jesh gjithmonë i/e informuar dhe i/e përfshirë.
+              Bashkohu me komunitetin dhe bëhu pjesë e ndryshimit pozitiv në universitetin tonë!
                 </p>
-                <p>
-                  Pavarësisht nëse je pjesë e një klubi apo thjesht dëshiron të marrësh pjesë në një event, ne të ndihmojmë të jesh gjithmonë i/e informuar dhe i/e përfshirë.
-                </p>
-                <p>
-                  Bashkohu me komunitetin dhe bëhu pjesë e ndryshimit pozitiv në universitetin tonë!
-                </p>
-              </div>
-            )}
             <Button
               size="lg"
-              onClick={() => setShowMore(prev => !prev)}
               className="w-full sm:w-auto px-6 py-3 text-base sm:text-lg"
             >
-              {showMore ? "Mbylle" : "Zbulo më Shumë"}
+              <Link href="#events">Shiko Eventet</Link>
             </Button>
           </div>
           <div className="relative w-full h-64 sm:h-80 md:h-[50vh] lg:h-[60vh]">
