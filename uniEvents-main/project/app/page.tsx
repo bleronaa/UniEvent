@@ -105,7 +105,7 @@ export default function Home() {
           </div>
           <div className="relative w-full h-64 sm:h-80 md:h-[50vh] lg:h-[60vh]">
             <Image 
-              src="/Uploads/umib.jpg"
+              src="/uploads/umib.jpg"
               alt="heroImage"
               fill
               className="object-contain md:object-cover"
