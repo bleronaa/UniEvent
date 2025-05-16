@@ -10,21 +10,16 @@ export function Footer() {
       <div className="flex flex-col items-center sm:items-start gap-4">
         <p className="text-lg font-semibold">UniEvents</p>
         <p className="text-sm text-center sm:text-left">
-          &copy; {new Date().getFullYear()} UniEvents. All rights reserved.
+          &copy; {new Date().getFullYear()} UniEvents. Të gjitha te drejtat e rezervuara.
         </p>
       </div>
 
       <div className="flex gap-6 mt-4 sm:mt-0">
-        <Link href="https://github.com/your-username" target="_blank">
-          <Github className="h-6 w-6 text-white hover:text-primary-600" />
-        </Link>
-        <Link href="https://twitter.com/your-username" target="_blank">
-          <Twitter className="h-6 w-6 text-white hover:text-primary-600" />
-        </Link>
-        <Link href="https://facebook.com/your-username" target="_blank">
+        
+        <Link href="https://www.facebook.com/uibm02" target="_blank">
           <Facebook className="h-6 w-6 text-white hover:text-primary-600" />
         </Link>
-        <Link href="https://instagram.com/your-username" target="_blank">
+        <Link href="https://www.instagram.com/uibm_net/" target="_blank">
           <Instagram className="h-6 w-6 text-white hover:text-primary-600" />
         </Link>
       </div>

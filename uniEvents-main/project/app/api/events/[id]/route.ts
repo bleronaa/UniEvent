@@ -43,7 +43,13 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(event, { headers: corsHeaders });
+    // Transformo `image` në `imageUrl` për konsistencë
+    const eventWithImageUrl = {
+      ...event.toObject(),
+      imageUrl: event.image || null,
+    };
+
+    return NextResponse.json(eventWithImageUrl, { headers: corsHeaders });
   } catch (error) {
     console.error("Error fetching event:", error);
     return NextResponse.json(

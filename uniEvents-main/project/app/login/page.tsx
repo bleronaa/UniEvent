@@ -75,7 +75,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] grid grid-cols-1 md:grid-cols-2">
+    <div id="logout" className="min-h-[calc(100vh-4rem)] grid grid-cols-1 md:grid-cols-2">
       {/* Left side - Image */}
       <div className="hidden md:block relative bg-gradient-to-br from-primary/10 to-primary/5">
         <div

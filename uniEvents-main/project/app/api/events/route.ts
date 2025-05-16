@@ -4,6 +4,8 @@ import Events from "../models/Events";
 import User from "../models/User";
 import cloudinary from "cloudinary";
 import { sendEmail } from "@/lib/sendEmail";
+import { format } from "date-fns";
+import { sq } from "date-fns/locale";
 
 // Konfiguro Cloudinary
 cloudinary.v2.config({
@@ -34,7 +36,8 @@ export async function POST(req: Request) {
     await dbConnect();
 
     const formData = await req.formData();
-    const file = formData.get("image") as File;
+    const file = formData.get("image") as File | null;
+    const imageUrl = formData.get("imageUrl") as string | null;
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
     const date = formData.get("date") as string;
@@ -43,7 +46,17 @@ export async function POST(req: Request) {
     const category = formData.get("category") as string;
     const organizer = formData.get("organizer") as string;
 
-    let imageUrl = "";
+    // Validimi i fushave të detyrueshme
+    if (!title || !date || !location || !category || !organizer) {
+      return NextResponse.json(
+        { error: "Fusha të detyrueshme mungojnë" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    let finalImageUrl = "";
+
+    // Trajto ngarkimin e skedarit ose URL-në
     if (file && file.size > 0) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
@@ -60,19 +73,29 @@ export async function POST(req: Request) {
         uploadStream.end(buffer);
       });
 
-      imageUrl = (result as any).secure_url;
-      console.log("Imazhi u ngarkua në Cloudinary:", imageUrl);
+      finalImageUrl = (result as any).secure_url;
+      console.log("Imazhi u ngarkua në Cloudinary:", finalImageUrl);
+    } else if (imageUrl) {
+      // Përdor URL-në e dhënë
+      finalImageUrl = imageUrl;
+      console.log("URL imazhi i dhënë:", finalImageUrl);
+    } else {
+      // As skedar as URL nuk është dhënë
+      return NextResponse.json(
+        { error: "Ju lutem ngarkoni një imazh ose jepni një URL imazhi" },
+        { status: 400, headers: corsHeaders }
+      );
     }
 
     const newEvent = new Events({
       title,
       description,
-      date,
+      date: new Date(date),
       location,
       capacity: capacity ? Number(capacity) : null,
       category,
       organizer,
-      image: imageUrl,
+      image: finalImageUrl,
     });
 
     await newEvent.save();
@@ -85,8 +108,8 @@ export async function POST(req: Request) {
           await sendEmail({
             to: user.email,
             subject: `Event i Ri: ${title}`,
-            text: `Përshëndetje ${user.name},\n\nKemi një event të ri në UniEvents!\n\nTitulli: ${title}\nPërshkrimi: ${description || 'Nuk ka përshkrim'}\nData: ${new Date(date).toLocaleString()}\nVendndodhja: ${location || 'Nuk është specifikuar'}\nKategoria: ${category}\n\nShpresojmë të shihemi atje!\nEkipi UniEvents`,
-            html: `<h1>Event i Ri: ${title}</h1><p>Përshëndetje ${user.name},</p><p>Kemi një event të ri në UniEvents!</p><p><strong>Titulli:</strong> ${title}<br><strong>Përshkrimi:</strong> ${description || 'Nuk ka përshkrim'}<br><strong>Data:</strong> ${new Date(date).toLocaleString()}<br><strong>Vendndodhja:</strong> ${location || 'Nuk është specifikuar'}<br><strong>Kategoria:</strong> ${category}</p><p>Shpresojmë të shihemi atje!</p><p>Ekipi UniEvents</p>`,
+            text: `Përshëndetje ${user.name},\n\nKemi një event të ri në UniEvents!\n\nTitulli: ${title}\nPërshkrimi: ${description || "Nuk ka përshkrim"}\nData: ${format(new Date(date), "d MMMM yyyy", { locale: sq })}\nVendndodhja: ${location || "Nuk është specifikuar"}\nKategoria: ${category}\n\nShpresojmë të shihemi atje!\nEkipi UniEvents`,
+            html: `<h1>Event i Ri: ${title}</h1><p>Përshëndetje ${user.name},</p><p>Kemi një event të ri në UniEvents!</p><p><strong>Titulli:</strong> ${title}<br><strong>Përshkrimi:</strong> ${description || "Nuk ka përshkrim"}<br><strong>Data:</strong> ${format(new Date(date), "d MMMM yyyy", { locale: sq })}<br><strong>Vendndodhja:</strong> ${location || "Nuk është specifikuar"}<br><strong>Kategoria:</strong> ${category}</p><p>Shpresojmë të shihemi atje!</p><p>Ekipi UniEvents</p>`,
           });
           console.log(`Email u dërgua me sukses te: ${user.email}`);
         } catch (emailError) {
@@ -122,7 +145,7 @@ export async function GET(request: Request) {
     const eventsWithImageUrls = events.map((event) => {
       return {
         ...event.toObject(),
-        imageUrl: event.image || null, // Përdor URL-në e Cloudinary direkt
+        imageUrl: event.image || null, // Përdor URL-në e Cloudinary ose URL-në e dhënë
       };
     });
 

@@ -43,7 +43,7 @@ export function Navbar() {
               <NavigationMenu>
                 <NavigationMenuList className="flex gap-2">
                   <NavigationMenuItem>
-                    <Link href="/" legacyBehavior passHref>
+                    <Link href="/#events" legacyBehavior passHref>
                       <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                         Eventet
                       </NavigationMenuLink>
@@ -77,7 +77,8 @@ export function Navbar() {
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => logout()}>
                     <LogOut className="h-4 w-4 mr-2" />
-                    Dil
+                    <Link href="/#logout">Dil</Link>
+                    
                   </Button>
                 </>
               ) : (

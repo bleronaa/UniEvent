@@ -4,22 +4,28 @@ import Event from "../../models/Events";
 import User from "../../models/User";
 import { sendEmail } from "@/lib/sendEmail";
 import mongoose from "mongoose";
+import cloudinary from "cloudinary";
+import { format } from "date-fns";
+import { sq } from "date-fns/locale";
 
-// Përcakto origin-in dinamikisht bazuar në mjedis
-const allowedOrigin = "*"
-// Headers të përbashkët për CORS
+// Konfiguro Cloudinary
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const allowedOrigin = "*";
 const corsHeaders = {
   "Access-Control-Allow-Origin": allowedOrigin,
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, x-user-id",
 };
 
-// 1. Metoda OPTIONS (për preflight requests)
 export async function OPTIONS() {
   return NextResponse.json({}, { status: 200, headers: corsHeaders });
 }
 
-// 2. POST: Krijo një event të ri
 export async function POST(request: Request) {
   try {
     await dbConnect();
@@ -27,13 +33,14 @@ export async function POST(request: Request) {
 
     // Merr të dhënat nga FormData
     const formData = await request.formData();
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const date = formData.get("date") as string;
-    const location = formData.get("location") as string;
-    const capacity = formData.get("capacity") as string;
-    const category = formData.get("category") as string;
-    const image = formData.get("image") as string; // Supozohet si string (URL)
+    const title = formData.get("title")?.toString().trim();
+    const description = formData.get("description")?.toString();
+    const date = formData.get("date")?.toString(); // Mund të jetë undefined
+    const location = formData.get("location")?.toString().trim();
+    const capacity = formData.get("capacity")?.toString();
+    const category = formData.get("category")?.toString().trim();
+    const imageFile = formData.get("image") as File | null;
+    const imageUrl = formData.get("imageUrl")?.toString().trim();
     const userId = request.headers.get("x-user-id");
 
     console.log("FormData received:", {
@@ -43,11 +50,12 @@ export async function POST(request: Request) {
       location,
       capacity,
       category,
-      image,
+      imageFile: imageFile ? imageFile.name : null,
+      imageUrl,
       userId,
     });
 
-    // Kontrollo nëse userId është i vlefshëm
+    // Validimi i userId
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       console.error("Invalid userId:", userId);
       return NextResponse.json(
@@ -56,7 +64,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Kontrollo nëse përdoruesi ekziston
     const organizerUser = await User.findById(userId);
     if (!organizerUser) {
       console.error("Organizer not found for userId:", userId);
@@ -66,21 +73,68 @@ export async function POST(request: Request) {
       );
     }
 
-    // Kontrollo nëse kategoria është e vlefshme
+    // Validimi i kategorisë
     const validCategories = ["Inxh.Kompjuterike", "Inxh.Mekanike"];
-    if (!validCategories.includes(category)) {
-      console.error("Invalid category:", category);
+    if (!category || !validCategories.includes(category)) {
+      console.error("Invalid or missing category:", category);
       return NextResponse.json(
-        { error: "Kategoria e pavlefshme" },
+        { error: "Ju lutem zgjidhni një kategori të vlefshme", errors: { category: "Ju lutem zgjidhni një kategori të vlefshme" } },
         { status: 400, headers: corsHeaders }
       );
     }
 
-    // Kontrollo nëse të dhënat e nevojshme janë të pranishme
-    if (!title || !date || !location || !category) {
-      console.error("Missing required fields:", { title, date, location, category });
+    // Validimi i fushave të detyrueshme
+    const errors: { [key: string]: string } = {};
+    if (!title) errors.title = "Ju lutem plotësoni titullin";
+    if (!date) {
+      errors.date = "Ju lutem zgjidhni datën dhe kohën";
+    } else {
+      const parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        errors.date = "Ju lutem vendosni një datë dhe kohë të vlefshme";
+      }
+    }
+    if (!location) errors.location = "Ju lutem plotësoni lokacionin";
+
+    // Validimi dhe trajtimi i imazhit
+    let finalImageUrl = "";
+    if (imageFile && imageFile.size > 0) {
+      try {
+        const arrayBuffer = await imageFile.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const result = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.v2.uploader.upload_stream(
+            { folder: "uni-events", resource_type: "image" },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(buffer);
+        });
+        finalImageUrl = (result as any).secure_url;
+        console.log("Imazhi u ngarkua në Cloudinary:", finalImageUrl);
+      } catch (uploadError) {
+        console.error("Error uploading image to Cloudinary:", uploadError);
+        errors.image = "Dështoi ngarkimi i imazhit";
+      }
+    } else if (imageUrl) {
+      try {
+        new URL(imageUrl);
+        finalImageUrl = imageUrl;
+        console.log("URL imazhi i dhënë:", finalImageUrl);
+      } catch {
+        errors.image = "Ju lutem jepni një URL të vlefshme për imazhin";
+      }
+    } else {
+      errors.image = "Ju lutem ngarkoni një foto ose jepni URL-në e fotos";
+    }
+
+    // Kthe gabimet nëse ka
+    if (Object.keys(errors).length > 0) {
+      console.error("Validation errors:", errors);
       return NextResponse.json(
-        { error: "Plotësoni të gjitha fushat e nevojshme" },
+        { error: "Plotësoni të gjitha fushat e nevojshme", errors },
         { status: 400, headers: corsHeaders }
       );
     }
@@ -89,65 +143,57 @@ export async function POST(request: Request) {
     const event = await Event.create({
       title,
       description,
-      date: new Date(date),
+      date: new Date(date!), // Shto `!` për të treguar që `date` nuk është `undefined` pas validimit
       organizer: userId,
       location,
-     // Vendos kapacitetin vetëm nëse është dhënë (opsional)
       capacity: capacity ? parseInt(capacity) : undefined,
-
       category,
-      image: image || "",
+      image: finalImageUrl,
       status: "pending",
     });
     console.log("Event created with ID:", event._id);
 
-    // Merr të gjithë përdoruesit
+    // Dërgo email njoftues
     const users = await User.find({});
-    console.log("Users found for notification:", users.map(u => u.email));
-    console.log("Number of users to notify:", users.length);
-
-    if (users.length === 0) {
-      console.warn("No users found to notify. Email sending skipped.");
-    } else {
-      // Dërgo email njoftues te të gjithë përdoruesit
+    console.log("Users found for notification:", users.length);
+    if (users.length > 0) {
       for (const user of users) {
         try {
           await sendEmail({
             to: user.email,
             subject: `Event i Ri: ${title}`,
-            text: `Përshëndetje ${user.name},\n\nKemi një event të ri në UniEvents!\n\nTitulli: ${title}\nPërshkrimi: ${description || 'Nuk ka përshkrim'}\nData: ${new Date(date).toLocaleString()}\nVendndodhja: ${location || 'Nuk është specifikuar'}\nKategoria: ${category}\nOrganizatori: ${organizerUser.name}\n\nShpresojmë të shihemi atje!\nEkipi UniEvents`,
-            html: `<h1>Event i Ri: ${title}</h1><p>Përshëndetje ${user.name},</p><p>Kemi një event të ri në UniEvents!</p><p><strong>Titulli:</strong> ${title}<br><strong>Përshkrimi:</strong> ${description || 'Nuk ka përshkrim'}<br><strong>Data:</strong> ${new Date(date).toLocaleString()}<br><strong>Vendndodhja:</strong> ${location || 'Nuk është specifikuar'}<br><strong>Kategoria:</strong> ${category}<br><strong>Organizatori:</strong> ${organizerUser.name}</p><p>Shpresojmë të shihemi atje!</p><p>Ekipi UniEvents</p>`,
+            text: `Përshëndetje ${user.name},\n\nKemi një event të ri në UniEvents!\n\nTitulli: ${title}\nPërshkrimi: ${description || "Nuk ka përshkrim"}\nData: ${format(new Date(date!), "d MMMM yyyy, H:mm", { locale: sq })}\nVendndodhja: ${location || "Nuk është specifikuar"}\nKategoria: ${category}\nOrganizatori: ${organizerUser.name}\n\nShpresojmë të shihemi atje!\nEkipi UniEvents`,
+            html: `<h1>Event i Ri: ${title}</h1><p>Përshëndetje ${user.name},</p><p>Kemi një event të ri në UniEvents!</p><p><strong>Titulli:</strong> ${title}<br><strong>Përshkrimi:</strong> ${description || "Nuk ka përshkrim"}<br><strong>Data:</strong> ${format(new Date(date!), "d MMMM yyyy, H:mm", { locale: sq })}<br><strong>Vendndodhja:</strong> ${location || "Nuk është specifikuar"}<br><strong>Kategoria:</strong> ${category}<br><strong>Organizatori:</strong> ${organizerUser.name}</p><p>Shpresojmë të shihemi atje!</p><p>Ekipi UniEvents</p>`,
           });
           console.log(`Email sent successfully to: ${user.email}`);
         } catch (emailError) {
           console.error(`Failed to send email to ${user.email}:`, emailError);
         }
       }
-      console.log("All email sending attempts completed");
+    } else {
+      console.warn("No users found to notify. Email sending skipped.");
     }
 
     // Popullo organizatorin për përgjigjen
     const populatedEvent = await Event.findById(event._id).populate("organizer", "name");
 
+    // Transformo `image` në `imageUrl` për konsistencë
+    const eventResponse = {
+      id: populatedEvent._id,
+      title: populatedEvent.title,
+      description: populatedEvent.description,
+      date: populatedEvent.date,
+      organizer: populatedEvent.organizer,
+      location: populatedEvent.location,
+      capacity: populatedEvent.capacity,
+      category: populatedEvent.category,
+      imageUrl: populatedEvent.image, // Kthe `image` si `imageUrl`
+      status: populatedEvent.status,
+    };
+
     return NextResponse.json(
-      {
-        event: {
-          id: populatedEvent._id,
-          title: populatedEvent.title,
-          description: populatedEvent.description,
-          date: populatedEvent.date,
-          organizer: populatedEvent.organizer,
-          location: populatedEvent.location,
-          capacity: populatedEvent.capacity,
-          category: populatedEvent.category,
-          image: populatedEvent.image,
-          status: populatedEvent.status,
-        },
-      },
-      {
-        status: 201,
-        headers: corsHeaders,
-      }
+      { event: eventResponse },
+      { status: 201, headers: corsHeaders }
     );
   } catch (error) {
     console.error("Gabim gjatë krijimit të eventit:", error);

@@ -10,6 +10,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Footer } from "@/components/footer";
+import { format } from 'date-fns';
+import { sq } from 'date-fns/locale';
 
 interface Event {
   _id: string;
@@ -17,7 +19,7 @@ interface Event {
   description: string;
   date: string;
   location: string;
-  capacity: number;
+  capacity: number | null;
   category: string;
   organizer: {
     _id: string;
@@ -27,6 +29,7 @@ interface Event {
 }
 
 const categories = ["Inxh.Kompjuterike", "Inxh.Mekanike"];
+const EVENTS_PER_PAGE = 6; // Maksimumi 6 evente për faqe
 
 export default function Home() {
   const { user } = useAuth();
@@ -34,6 +37,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1); // State për faqen aktuale
 
   useEffect(() => {
     async function fetchEvents() {
@@ -56,6 +60,27 @@ export default function Home() {
     (selectedCategory === "All" || event.category === selectedCategory)
   );
 
+  // Llogarit numrin total të faqeve
+  const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
+
+  // Merr eventet për faqen aktuale
+  const paginatedEvents = filteredEvents.slice(
+    (currentPage - 1) * EVENTS_PER_PAGE,
+    currentPage * EVENTS_PER_PAGE
+  );
+
+  // Funksion për të ndryshuar faqen
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      // Lëviz te seksioni i eventeve në vend të kryes të faqes
+      const eventsSection = document.getElementById("events");
+      if (eventsSection) {
+        eventsSection.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -67,10 +92,10 @@ export default function Home() {
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-700">
               Organizo dhe eksploro aktivitete që lidhin studentët, klubet dhe fakultetet, duke sjellë ide dhe mundësi të reja për të gjithë komunitetin universitar.<br></br>
-              Me anë të platformës sonë, studentët mund të zbulojnë ngjarje të rëndësishme, të krijojnë lidhje me bashkëmoshatarët dhe të angazhohen në aktivitete që pasurojnë jetën universitare.<br></br>
-              Pavarësisht nëse je pjesë e një klubi apo thjesht dëshiron të marrësh pjesë në një event, ne të ndihmojmë të jesh gjithmonë i/e informuar dhe i/e përfshirë.
-              Bashkohu me komunitetin dhe bëhu pjesë e ndryshimit pozitiv në universitetin tonë!
-                </p>
+              Me platformën tonë, ke mundësinë të zbulosh evente interesante, të njohësh studentë të tjerë dhe të përfshihesh në aktivitete që e bëjnë jetën universitare më të gjallë dhe argëtuese.
+              Nuk ka rëndësi nëse je pjesë e një klubi apo thjesht do të marrësh pjesë në ndonjë event – ne jemi këtu që të mbajmë të informuar dhe të lidhur me gjithçka që ndodh.
+              Bashkohu me komunitetin tonë dhe jepi vetes mundësinë të bësh diçka të bukur gjatë kohës në universitet!
+            </p>
             <Button
               size="lg"
               className="w-full sm:w-auto px-6 py-3 text-base sm:text-lg"
@@ -80,7 +105,7 @@ export default function Home() {
           </div>
           <div className="relative w-full h-64 sm:h-80 md:h-[50vh] lg:h-[60vh]">
             <Image 
-              src="/assets/images/hero.png"
+              src="/Uploads/umib.jpg"
               alt="heroImage"
               fill
               className="object-contain md:object-cover"
@@ -91,7 +116,7 @@ export default function Home() {
       </section>
 
       {/* Events Section */}
-      <section id="events" className="wrapper py-8 sm:py-12 lg:py-16 bg-gray-50">
+      <section id="events" className="wrapper py-8 sm:py-12 lg:pt-16 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <div className="flex flex-col gap-6 sm:gap-8 lg:gap-12">
             {/* Header and Filters */}
@@ -99,23 +124,23 @@ export default function Home() {
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
                 Shfleto të gjitha eventet
               </h1>
-              {user && (
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                {user && (
                   <Button className="bg-primary hover:bg-primary/90 w-full sm:w-auto" asChild>
                     <Link href="/create">Krijo event</Link>
                   </Button>
-                  <select
-                    className="w-full sm:w-48 px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                  >
-                    <option value="All">Të gjitha kategoritë</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
+                )}
+                <select
+                  className="w-full sm:w-48 px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="All">Të gjitha kategoritë</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Search Input */}
@@ -135,78 +160,102 @@ export default function Home() {
                 <p className="text-base sm:text-lg text-gray-600">Duke ngarkuar eventet...</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents.length > 0 ? (
-                  filteredEvents.map((event) => (
-                    <Card key={event._id} className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-white">
-                      <CardHeader className="space-y-4 pb-4">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-2">
-                            <Badge variant="secondary" className="mb-2">
-                              {event.category}
-                            </Badge>
-                            <CardTitle className="text-xl sm:text-2xl group-hover:text-primary transition-colors">
-                              <Link href={`/events/${event._id}`}>
-                                {event.title}
-                              </Link>
-                            </CardTitle>
-                            <CardDescription className="text-sm sm:text-base text-gray-600 line-clamp-2">
-                              {event.description}
-                            </CardDescription>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="relative w-full h-48 sm:h-56 rounded-lg overflow-hidden">
-                          {event.imageUrl ? (
-                            <Image 
-                              src={event.imageUrl} 
-                              alt={event.title} 
-                              fill
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                              <span className="text-gray-500">Nuk ka imazh</span>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedEvents.length > 0 ? (
+                    paginatedEvents.map((event) => (
+                      <Link
+                        key={event._id}
+                        href={`/events/${event._id}`}
+                        className="group block"
+                      >
+                        <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-white cursor-pointer">
+                          <CardHeader className="space-y-4 pb-4">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-2">
+                                <Badge variant="secondary" className="mb-2">
+                                  {event.category}
+                                </Badge>
+                                <CardTitle className="text-xl sm:text-2xl group-hover:text-primary transition-colors">
+                                  {event.title}
+                                </CardTitle>
+                                <CardDescription className="text-sm sm:text-base text-gray-600 line-clamp-2">
+                                  {event.description}
+                                </CardDescription>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 text-sm sm:text-base">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            <span>{new Date(event.date).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            <span>{event.location}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            <span>Kapaciteti: {event.capacity}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            <span> Organizuar nga: {event.organizer?.name || "I panjohur"}</span>
-                          </div>
-                        </div>
-                        <div className="pt-4 border-t border-gray-100">
-                          <Button 
-                            variant="outline" 
-                            className="w-full hover:bg-primary hover:text-white transition-colors text-sm sm:text-base"
-                            asChild
-                          >
-                            <Link href={`/events/${event._id}`}>Shiko detajet</Link>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="col-span-1 sm:col-span-2 lg:col-span-3 h-64 flex items-center justify-center bg-white rounded-lg">
-                    <p className="text-base sm:text-lg text-gray-600">Nuk u gjet asnjë event.</p>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="relative w-full h-48 sm:h-56 rounded-lg overflow-hidden">
+                              {event.imageUrl ? (
+                                <Image
+                                  src={event.imageUrl}
+                                  alt={event.title}
+                                  fill
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                  <span className="text-gray-500">Nuk ka imazh</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-sm sm:text-base">
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                                <span>{format(new Date(event.date), 'd MMMM yyyy', { locale: sq })}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                                <span>{event.location}</span>
+                              </div>
+                              {event.capacity !== null && (
+                                <div className="flex items-center gap-2 text-gray-600">
+                                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                                  <span>{event.capacity}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                                <span>{event.organizer?.name || "I panjohur"}</span>
+                              </div>
+                            </div>
+                            <div className="pt-4 border-t border-gray-100">
+                              <Button
+                                variant="outline"
+                                className="w-full hover:bg-primary hover:text-white transition-colors text-sm sm:text-base"
+                              >
+                                Shiko detajet
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="col-span-1 sm:col-span-2 lg:col-span-3 h-64 flex items-center justify-center bg-white rounded-lg">
+                      <p className="text-base sm:text-lg text-gray-600">Nuk u gjet asnjë event.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-8">
+                   
+                    {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  
                   </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>

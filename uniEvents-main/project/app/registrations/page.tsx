@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, MapPin, Users } from "lucide-react";
 import { format } from "date-fns";
 import { Footer } from "@/components/footer";
-import User from "../api/models/User";
+import { sq } from "date-fns/locale";
 
 interface Registration {
   _id: string;
@@ -28,14 +28,22 @@ interface Registration {
 
 export default function RegistrationsPage() {
   const router = useRouter();
-  const { user, getAuthHeader } = useAuth();
+  const { user, getAuthHeader, isLoading, initializeClientAuth } = useAuth();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
 
+  // Thirr initializeClientAuth kur faqja montohet
   useEffect(() => {
+    initializeClientAuth();
+  }, [initializeClientAuth]);
+
+  useEffect(() => {
+    console.log("Auth state:", { user, isLoading });
+    if (isLoading) return; // Prit derisa gjendja e autentikimit të ngarkohet
     if (!user) {
+      console.log("Redirecting to /login");
       router.push("/login");
       return;
     }
@@ -66,7 +74,7 @@ export default function RegistrationsPage() {
     }
 
     fetchRegistrations();
-  }, [user, router]);
+  }, [user, isLoading, router, getAuthHeader]);
 
   async function registerForEvent(eventId: string) {
     try {
@@ -104,7 +112,6 @@ export default function RegistrationsPage() {
     }
   }
 
-
   if (loading) {
     return (
       <div className="container mx-auto py-8 px-4">
@@ -132,18 +139,18 @@ export default function RegistrationsPage() {
   }
 
   return (
-    <>
-      <div className="container mx-auto py-8 px-4  mt-16">
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold">Lista e regjistrimeve që keni bërë</h1>
-          
-          <div className="grid gap-4">
-          {registrations.length === 0 && (
-              <p className="text-muted-foreground">Nuk keni asnjë regjistrim aktiv.</p>
-            )}
-            {registrations.map((registration) => {
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-1">
+        <div className="container mx-auto py-8 px-4 mt-16">
+          <div className="space-y-6">
+            <h1 className="text-3xl font-bold">Lista e regjistrimeve që keni bërë</h1>
+            
+            <div className="grid gap-4">
+              {registrations.length === 0 && (
+                <p className="text-muted-foreground">Nuk keni asnjë regjistrim aktiv.</p>
+              )}
+              {registrations.map((registration) => {
                 if (!registration.event) return null;
-                
 
                 const eventDate = new Date(registration.event.date);
                 const isPast = eventDate < new Date();
@@ -159,17 +166,12 @@ export default function RegistrationsPage() {
                           <div className="grid gap-3">
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <CalendarDays className="h-4 w-4" />
-                              <span>{format(eventDate, "EEEE, MMMM d, yyyy 'at' h:mm a")}</span>
+                              <span>{format(eventDate, "d MMMM yyyy , HH:mm ", {locale: sq})}</span>
                             </div>
               
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <MapPin className="h-4 w-4" />
                               <span>{registration.event.location}</span>
-                            </div>
-              
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Users className="h-4 w-4" />
-                              <span>{`${registration.event.capacity - 1} vende të lira`}</span>
                             </div>
                           </div>
                         </div>
@@ -195,11 +197,11 @@ export default function RegistrationsPage() {
                   </Card>
                 );
               })}
-
+            </div>
           </div>
         </div>
-      </div>
-
-    </>
+      </main>
+      <Footer />
+    </div>
   );
 }

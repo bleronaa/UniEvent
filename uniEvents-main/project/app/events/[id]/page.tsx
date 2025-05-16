@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import Link from "next/link";
 import { Footer } from "@/components/footer";
+import { sq } from "date-fns/locale";
+import Image from "next/image"; // Shto importin për Image
 
 interface Event {
   _id: string;
@@ -23,6 +25,7 @@ interface Event {
     _id: string;
     name: string;
   };
+  imageUrl?: string;
 }
 
 interface Registration {
@@ -84,7 +87,10 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
         const res = await fetch(`/api/events`);
         if (!res.ok) throw new Error("Failed to fetch events");
         const data: Event[] = await res.json();
-        setOtherEvents(data.filter((e) => e._id !== params.id));
+        const otherEvents = data.filter((e) => e._id !== params.id);
+        const shuffled = otherEvents.sort(() => 0.5 - Math.random());
+        const randomSix = shuffled.slice(0, 6);
+        setOtherEvents(randomSix);
       } catch (error) {
         console.error("Dështoi ngarkimi i eventeve të tjera:", error);
       }
@@ -207,7 +213,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                   <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <User className="h-4 w-4" />
-                    <span> Organizuar nga: {event.organizer?.name || "I panjohur"}</span>
+                    <span>Organizuar nga {event.organizer?.name || "I panjohur"}</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -228,8 +234,25 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
           <CardContent className="p-8">
             <div className="grid md:grid-cols-3 gap-8">
               <div className="md:col-span-2 space-y-8">
+                {/* Shto seksionin për imazhin e eventit */}
+                  <div className="relative w-full h-64 sm:h-80 rounded-lg overflow-hidden">
+                        {event.imageUrl ? (
+                    <Image
+                      src={event.imageUrl}
+                      alt={event.title}
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+               
+                ) : (
+                  <div className="w-full h-64 sm:h-80 bg-gray-200 flex items-center justify-center rounded-lg">
+                    <span className="text-gray-500">Nuk ka imazh</span>
+                  </div>
+                )}
+   </div>
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">Rreth këtij eventi</h2>
+                  <h2 className="text-xl font-semibold mb-4">Përshkrimi i eventit</h2>
                   <div className="prose max-w-none">
                     <p className="text-muted-foreground whitespace-pre-wrap">{event.description}</p>
                   </div>
@@ -243,7 +266,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                       <div>
                         <p className="font-medium">Data</p>
                         <p className="text-muted-foreground">
-                          {format(eventDate, "EEEE, MMMM d, yyyy")}
+                          {format(eventDate, "d MMMM yyyy", { locale: sq })}
                         </p>
                       </div>
                     </div>
@@ -252,7 +275,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                       <Clock className="h-5 w-5 text-primary mt-1" />
                       <div>
                         <p className="font-medium">Koha</p>
-                        <p className="text-muted-foreground">{format(eventDate, "h:mm a")}</p>
+                        <p className="text-muted-foreground">{format(eventDate, "H:mm")}</p>
                       </div>
                     </div>
 
@@ -292,12 +315,11 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
               <div>
                 <Card className="sticky top-4">
                   <CardHeader>
-                    <CardTitle>Informacion i shpejtë</CardTitle>
+                    <CardTitle>Ndjek eventin?</CardTitle>
                     <CardDescription>Detaje të rëndësishme për eventin</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span>Gjendja</span>
                       <span
                         className={`px-2 py-1 rounded-full text-sm ${
                           isUpcoming
@@ -311,13 +333,12 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                           ? "Regjistrimi i hapur"
                           : isUpcoming
                           ? "Plotësisht i rezervuar"
-                          : "Event i shkuar"}
+                          : "Eventi ka kaluar"}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span>Kapaciteti</span>
-                      <span className="text-sm">
+                      <span className="text-sm px-2 py-1">
                         {typeof event.capacity === "number"
                           ? `${registrationCount}/${event.capacity}`
                           : "I papërcaktuar"}
@@ -332,8 +353,8 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                               <div className="flex items-center gap-2 text-green-600">
                                 <CheckCircle className="h-5 w-5" />
                                 <span>
-                                  Faleminderit, ju jeni regjistruar më parë! (Statusi:{" "}
-                                  {statusTranslations[registrationStatus!] || registrationStatus || "Në pritje"})
+                                  Faleminderit, keni aplikuar!<br></br> Statusi:
+                                  {statusTranslations[registrationStatus!] || registrationStatus || "Në pritje"}
                                 </span>
                               </div>
                               <Button variant="link" asChild>
@@ -371,16 +392,16 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
         </Card>
 
         {otherEvents.length > 0 && (
-          <div className="mt-12">
+          <div className="mt-12 px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl font-bold mb-4">Evente Tjera</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {otherEvents.map((otherEvent) => (
-                <Card key={otherEvent._id} className="p-4">
+                <Card key={otherEvent._id} className="p-6">
                   <h3 className="text-lg font-semibold">{otherEvent.title}</h3>
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex items-center gap-2 text-muted-foreground py-2">
                     <CalendarDays className="h-4 w-4" />
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(otherEvent.date), "MMMM d, yyyy")}
+                      {format(new Date(otherEvent.date), "d MMMM yyyy", { locale: sq })}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">

@@ -14,7 +14,7 @@ const EventSchema = new mongoose.Schema({
     required: true,
     enum: ["Inxh.Kompjuterike", "Inxh.Mekanike"], // Restricting category to these values
   },
-  image:{ type: String, default: "" }, // Add the image field
+  image:{ type: String, required: true }, // Add the image field
   createdAt: { type: Date, default: Date.now },
   status: {
     type: String,

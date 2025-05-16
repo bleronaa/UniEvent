@@ -6,7 +6,8 @@ import Events from "../../models/Events";
 import { verify } from "jsonwebtoken";
 
 // Përcakto origin-in dinamikisht bazuar në mjedis
-const allowedOrigin ="*"
+const allowedOrigin = "*";
+
 // Helper: CORS headers
 const corsHeaders = {
   "Access-Control-Allow-Origin": allowedOrigin,
@@ -59,11 +60,32 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       );
     }
 
-    // Vetëm adminët mund të përditësojnë statusin e regjistrimit
-    if (user.role !== "admin") {
-      console.log(`User ${user.email} is not authorized to update registrations`);
+    const registration = await Registrations.findById(params.id);
+    if (!registration) {
+      console.log("Registration not found for ID:", params.id);
       return NextResponse.json(
-        { error: "Unauthorized: Only admins can update registrations" },
+        { error: "Registration not found" },
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
+    const event = await Events.findById(registration.event);
+    if (!event) {
+      console.log("Event not found for ID:", registration.event);
+      return NextResponse.json(
+        { error: "Event not found" },
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
+    // Kontrollo nëse përdoruesi është admin ose organizatori i eventit
+    const isAdmin = user.role === "admin";
+    const isEventOrganizer = event.organizer && event.organizer.toString() === user._id.toString();
+
+    if (!isAdmin && !isEventOrganizer) {
+      console.log(`User ${user.email} is not authorized to update registrations for event ${event._id}`);
+      return NextResponse.json(
+        { error: "Unauthorized: Only admins or event organizers can update registrations" },
         { status: 403, headers: corsHeaders }
       );
     }
@@ -77,38 +99,20 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       );
     }
 
-    const registration = await Registrations.findById(params.id);
-    if (!registration) {
-      console.log("Registration not found for ID:", params.id);
-      return NextResponse.json(
-        { error: "Registration not found" },
-        { status: 404, headers: corsHeaders }
-      );
-    }
-
-    // Nëse statusi ndryshon në "cancelled", ul numrin e regjistrimeve
-    if (status === "cancelled" && registration.status !== "cancelled") {
-      const event = await Events.findById(registration.event);
-      if (event) {
-        event.registrationCount = Math.max(0, event.registrationCount - 1);
-        await event.save();
-        console.log(`Decreased registrationCount for event ${event._id}`);
-      }
-    }
-
-    // Nëse statusi ndryshon nga "cancelled" në "confirmed" ose "pending", rrit numrin e regjistrimeve
-    if (registration.status === "cancelled" && (status === "confirmed" || status === "pending")) {
-      const event = await Events.findById(registration.event);
-      if (event && event.registrationCount < event.capacity) {
-        event.registrationCount += 1;
-        await event.save();
-        console.log(`Increased registrationCount for event ${event._id}`);
-      } else if (event && event.registrationCount >= event.capacity) {
-        console.log("Event is full, cannot confirm registration");
-        return NextResponse.json(
-          { error: "Event is full" },
-          { status: 400, headers: corsHeaders }
-        );
+    // Kontrollo kapacitetin e eventit nëse statusi ndryshon në "confirmed"
+    if (status === "confirmed" && registration.status !== "confirmed") {
+      if (event.capacity) {
+        const confirmedRegistrations = await Registrations.countDocuments({
+          event: event._id,
+          status: "confirmed",
+        });
+        if (confirmedRegistrations >= event.capacity) {
+          console.log("Event is full, cannot confirm registration");
+          return NextResponse.json(
+            { error: "Event is full" },
+            { status: 400, headers: corsHeaders }
+          );
+        }
       }
     }
 
@@ -120,7 +124,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       .populate("user", "name email")
       .populate("event", "title description date location capacity category");
 
-    console.log(`Updated registration ${params.id} to status ${status} by admin ${user.email}`);
+    console.log(`Updated registration ${params.id} to status ${status} by user ${user.email}`);
 
     return NextResponse.json(updatedRegistration, {
       headers: corsHeaders,
