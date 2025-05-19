@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Users, MapPin, Menu } from "lucide-react";
+import { CalendarDays, Users, MapPin, Menu, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -37,7 +37,36 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [currentPage, setCurrentPage] = useState(1); // State për faqen aktuale
+  const [currentPage, setCurrentPage] = useState(1);
+  // State for carousel
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Array of image URLs for the carousel
+  const carouselImages = [
+    "/uploads/umib.jpg",
+    "/uploads/event5.jpg",
+    "/uploads/event6.jpg",
+    "/uploads/event4.jpg",
+  ];
+
+  // Handle carousel navigation
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) => (prev === 0 ? carouselImages.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev === carouselImages.length - 1 ? 0 : prev + 1));
+  };
+
+  // Auto-advance carousel every 4 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev === carouselImages.length - 1 ? 0 : prev + 1));
+    }, 4000); // 4000ms = 4 seconds
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, [carouselImages.length]);
 
   useEffect(() => {
     async function fetchEvents() {
@@ -92,8 +121,7 @@ export default function Home() {
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-700">
               Organizo dhe eksploro aktivitete që lidhin studentët, klubet dhe fakultetet, duke sjellë ide dhe mundësi të reja për të gjithë komunitetin universitar.<br></br>
-              Me platformën tonë, ke mundësinë të zbulosh evente interesante, të njohësh studentë të tjerë dhe të përfshihesh në aktivitete që e bëjnë jetën universitare më të gjallë dhe argëtuese.
-              Nuk ka rëndësi nëse je pjesë e një klubi apo thjesht do të marrësh pjesë në ndonjë event – ne jemi këtu që të mbajmë të informuar dhe të lidhur me gjithçka që ndodh.
+              Këtu ke mundësinë të zbulosh evente interesante, të njoftohesh me studentë të tjerë dhe të përfshihesh në aktivitete që e bëjnë jetën universitare më të gjallë dhe argëtuese.
               Bashkohu me komunitetin tonë dhe jepi vetes mundësinë të bësh diçka të bukur gjatë kohës në universitet!
             </p>
             <Button
@@ -104,13 +132,40 @@ export default function Home() {
             </Button>
           </div>
           <div className="relative w-full h-64 sm:h-80 md:h-[50vh] lg:h-[60vh]">
-            <Image 
-              src="/uploads/umib.jpg"
-              alt="heroImage"
-              fill
-              className="object-contain md:object-cover"
-              priority
-            />
+            {/* Carousel Container */}
+            <div className="relative w-full h-full overflow-hidden rounded-lg">
+              {carouselImages.map((src, index) => (
+                <div
+                  key={src}
+                  className={`absolute inset-0 transition-opacity duration-500 ${
+                    index === currentImageIndex ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  <Image
+                    src={src}
+                    alt={`Hero Image ${index + 1}`}
+                    fill
+                    className="object-contain md:object-cover"
+                    priority={index === 0} // Priority for the first image
+                  />
+                </div>
+              ))}
+              {/* Navigation Arrows */}
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                aria-label="Previous Image"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={handleNextImage}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                aria-label="Next Image"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -122,7 +177,7 @@ export default function Home() {
             {/* Header and Filters */}
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-                Shfleto të gjitha eventet
+                Shfleto eventet
               </h1>
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 {user && (
@@ -131,7 +186,7 @@ export default function Home() {
                   </Button>
                 )}
                 <select
-                  className="w-full sm:w-48 px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                  className="w-full sm:w-48 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                 >
@@ -242,7 +297,6 @@ export default function Home() {
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
                   <div className="flex justify-center items-center gap-2 mt-8">
-                   
                     {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
                       <Button
                         key={page}
@@ -252,7 +306,6 @@ export default function Home() {
                         {page}
                       </Button>
                     ))}
-                  
                   </div>
                 )}
               </>

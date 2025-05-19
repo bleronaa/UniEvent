@@ -646,7 +646,7 @@ export default function ProfilePage() {
                                     className="flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-4 p-3 border-t sm:items-center"
                                   >
                                     <div className="flex items-center gap-2 sm:gap-0">
-                                      <span className="sm:hidden font-semibold text-sm">Emri:</span>
+                                      <span className="sm:hidden font-semibold text-sm ">Emri:</span>
                                       <span className="text-sm">{reg.user?.name || "Nuk dihet"}</span>
                                     </div>
                                     <div className="flex items-center gap-2 sm:gap-0">
@@ -658,7 +658,7 @@ export default function ProfilePage() {
                                       <Badge
                                         className={`${getStatusBadgeColor(
                                           reg.status
-                                        )} px-2 py-1 text-xs inline-flex items-center justify-center`}
+                                        )} ml-3 px-3 py-1 text-xs inline-flex items-center justify-center`}
                                       >
                                         {reg.status === "pending"
                                           ? "Në pritje"
