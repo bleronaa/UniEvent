@@ -10,7 +10,7 @@ export function Footer() {
       <div className="flex flex-col items-center sm:items-start gap-4">
         <p className="text-lg font-semibold">UniEvents</p>
         <p className="text-sm text-center sm:text-left">
-          &copy; {new Date().getFullYear()} UniEvents. Të gjitha te drejtat e rezervuara.
+          &copy; {new Date().getFullYear()} UniEvents. Të gjitha të drejtat e rezervuara.
         </p>
       </div>
 

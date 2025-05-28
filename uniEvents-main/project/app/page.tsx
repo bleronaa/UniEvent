@@ -216,84 +216,85 @@ export default function Home() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {paginatedEvents.length > 0 ? (
-                    paginatedEvents.map((event) => (
-                      <Link
-                        key={event._id}
-                        href={`/events/${event._id}`}
-                        className="group block"
-                      >
-                        <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-white cursor-pointer">
-                          <CardHeader className="space-y-4 pb-4">
-                            <div className="flex justify-between items-start">
-                              <div className="space-y-2">
-                                <Badge variant="secondary" className="mb-2">
-                                  {event.category}
-                                </Badge>
-                                <CardTitle className="text-xl sm:text-2xl group-hover:text-primary transition-colors">
-                                  {event.title}
-                                </CardTitle>
-                                <CardDescription className="text-sm sm:text-base text-gray-600 line-clamp-2">
-                                  {event.description}
-                                </CardDescription>
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div className="relative w-full h-48 sm:h-56 rounded-lg overflow-hidden">
-                              {event.imageUrl ? (
-                                <Image
-                                  src={event.imageUrl}
-                                  alt={event.title}
-                                  fill
-                                  className="object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                  <span className="text-gray-500">Nuk ka imazh</span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 text-sm sm:text-base">
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                                <span>{format(new Date(event.date), 'd MMMM yyyy', { locale: sq })}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                                <span>{event.location}</span>
-                              </div>
-                              {event.capacity !== null && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                                  <span>{event.capacity}</span>
-                                </div>
-                              )}
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                                <span>{event.organizer?.name || "I panjohur"}</span>
-                              </div>
-                            </div>
-                            <div className="pt-4 border-t border-gray-100">
-                              <Button
-                                variant="outline"
-                                className="w-full hover:bg-primary hover:text-white transition-colors text-sm sm:text-base"
-                              >
-                                Shiko detajet
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="col-span-1 sm:col-span-2 lg:col-span-3 h-64 flex items-center justify-center bg-white rounded-lg">
-                      <p className="text-base sm:text-lg text-gray-600">Nuk u gjet asnjë event.</p>
-                    </div>
-                  )}
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  {paginatedEvents.length > 0 ? (
+    paginatedEvents.map((event) => (
+      <Link
+        key={event._id}
+        href={`/events/${event._id}`}
+        className="group block"
+      >
+        <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-white cursor-pointer flex flex-col h-full">
+          <CardHeader className="space-y-4 pb-4 flex-none">
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <Badge variant="secondary" className="mb-2">
+                  {event.category}
+                </Badge>
+                <CardTitle className="text-xl sm:text-2xl group-hover:text-primary transition-colors">
+                  {event.title}
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base text-gray-600 line-clamp-2 max-h-12">
+                  {event.description}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 flex flex-col flex-grow justify-between">
+            <div className="space-y-4">
+              <div className="relative w-full h-48 sm:h-56 rounded-lg overflow-hidden">
+                {event.imageUrl ? (
+                  <Image
+                    src={event.imageUrl}
+                    alt={event.title}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-500">Nuk ka imazh</span>
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm sm:text-base">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <span>{format(new Date(event.date), 'd MMMM yyyy', { locale: sq })}</span>
                 </div>
-
+                <div className="flex items-center gap-2 text-gray-600">
+                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <span>{event.location}</span>
+                </div>
+                {event.capacity !== null && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    <span>{event.capacity}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Menu className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <span>{event.organizer?.name || "I panjohur"}</span>
+                </div>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-gray-100">
+              <Button
+                variant="outline"
+                className="w-full hover:bg-primary hover:text-white transition-colors text-sm sm:text-base"
+              >
+                Shiko detajet
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+    ))
+  ) : (
+    <div className="col-span-1 sm:col-span-2 lg:col-span-3 h-64 flex items-center justify-center bg-white rounded-lg">
+      <p className="text-base sm:text-lg text-gray-600">Nuk u gjet asnjë event.</p>
+    </div>
+  )}
+</div>
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
                   <div className="flex justify-center items-center gap-2 mt-8">
