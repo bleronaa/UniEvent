@@ -121,7 +121,6 @@ export default function Home() {
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-gray-700">
               Organizo dhe eksploro aktivitete që lidhin studentët, klubet dhe fakultetet, duke sjellë ide dhe mundësi të reja për të gjithë komunitetin universitar.<br></br>
-              Këtu ke mundësinë të zbulosh evente interesante, të njoftohesh me studentë të tjerë dhe të përfshihesh në aktivitete që e bëjnë jetën universitare më të gjallë dhe argëtuese.
               Bashkohu me komunitetin tonë dhe jepi vetes mundësinë të bësh diçka të bukur gjatë kohës në universitet!
             </p>
             <Button

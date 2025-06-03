@@ -169,24 +169,24 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
     }
   }
 
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8 px-4">
-        <Card>
-          <CardContent className="p-8">
-            <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-muted rounded w-3/4"></div>
-              <div className="h-4 bg-muted rounded w-1/2"></div>
-              <div className="space-y-2">
-                <div className="h-4 bg-muted rounded w-full"></div>
-                <div className="h-4 bg-muted rounded w-full"></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="container mx-auto py-8 px-4">
+  //       <Card>
+  //         <CardContent className="p-8">
+  //           <div className="animate-pulse space-y-6">
+  //             <div className="h-8 bg-muted rounded w-3/4"></div>
+  //             <div className="h-4 bg-muted rounded w-1/2"></div>
+  //             <div className="space-y-2">
+  //               <div className="h-4 bg-muted rounded w-full"></div>
+  //               <div className="h-4 bg-muted rounded w-full"></div>
+  //             </div>
+  //           </div>
+  //         </CardContent>
+  //       </Card>
+  //     </div>
+  //   );
+  // }
 
   if (!event) return null;
 
@@ -296,7 +296,7 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                             ? `${event.capacity} maksimumi i pjesëmarrësve${
                                 spotsLeft > 0 ? ` (${spotsLeft} vende të lira)` : ""
                               }`
-                            : "I papërcaktuar"}
+                            : "Kapaciteti i papërcaktuar"}
                         </p>
                       </div>
                     </div>
@@ -337,13 +337,13 @@ export default function EventDetailsPage({ params }: { params: { id: string } })
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    {/* <div className="flex items-center justify-between">
                       <span className="text-sm px-2 py-1">
                         {typeof event.capacity === "number"
                           ? `${registrationCount}/${event.capacity}`
-                          : "I papërcaktuar"}
+                          : "Kapaciteti i papërcaktuar"}
                       </span>
-                    </div>
+                    </div> */}
 
                     {isUpcoming && (
                       <div className="pt-4">

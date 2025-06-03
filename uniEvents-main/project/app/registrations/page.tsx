@@ -116,7 +116,7 @@ export default function RegistrationsPage() {
     return (
       <div className="container mx-auto py-8 px-4">
         <div className="space-y-4">
-          <h1 className="text-3xl font-bold">My Registrations</h1>
+          {/* <h1 className="text-3xl font-bold">My Registrations</h1> */}
           <div className="grid gap-4">
             {[1, 2, 3].map((n) => (
               <Card key={n}>
