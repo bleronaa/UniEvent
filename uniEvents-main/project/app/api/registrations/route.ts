@@ -103,11 +103,16 @@ export async function GET(request: Request) {
 
     let registrations;
     if (user.role === "admin") {
-      registrations = await Registrations.find({})
-        .populate("user", "name email")
-        .populate("event", "title description date location capacity category")
-        .sort({ createdAt: -1 });
-      console.log(`Admini ${user.email} mori ${registrations.length} regjistrime`);
+      // registrations = await Registrations.find({})
+     // Merr të gjitha eventet që i ka organizuar ky admin
+      const organizedEvents = await Events.find({ organizer: user._id });
+      const organizedEventIds = organizedEvents.map(e => e._id);
+   registrations = await Registrations.find({ event: { $in: organizedEventIds } })
+    .populate("user", "name email")
+    .populate("event", "title description date location capacity category")
+    .sort({ createdAt: -1 });
+
+  console.log(`Admini ${user.email} mori ${registrations.length} regjistrime për eventet që organizon`);
     } else {
       registrations = await Registrations.find({ user: decoded.userId })
         .populate("user", "name email")

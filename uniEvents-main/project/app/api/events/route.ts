@@ -54,6 +54,9 @@ export async function POST(req: Request) {
       );
     }
 
+    // Normalizo datën në UTC
+    const normalizedDate = new Date(date).toISOString();
+
     let finalImageUrl = "";
 
     // Trajto ngarkimin e skedarit ose URL-në
@@ -90,7 +93,7 @@ export async function POST(req: Request) {
     const newEvent = new Events({
       title,
       description,
-      date: new Date(date),
+      date: normalizedDate, // Ruaj datën në UTC
       location,
       capacity: capacity ? Number(capacity) : null,
       category,
@@ -108,8 +111,8 @@ export async function POST(req: Request) {
           await sendEmail({
             to: user.email,
             subject: `Event i Ri: ${title}`,
-            text: `Përshëndetje ${user.name},\n\nKemi një event të ri në UniEvents!\n\nTitulli: ${title}\nPërshkrimi: ${description || "Nuk ka përshkrim"}\nData: ${format(new Date(date), "d MMMM yyyy", { locale: sq })}\nVendndodhja: ${location || "Nuk është specifikuar"}\nKategoria: ${category}\n\nShpresojmë të shihemi atje!\nEkipi UniEvents`,
-            html: `<h1>Event i Ri: ${title}</h1><p>Përshëndetje ${user.name},</p><p>Kemi një event të ri në UniEvents!</p><p><strong>Titulli:</strong> ${title}<br><strong>Përshkrimi:</strong> ${description || "Nuk ka përshkrim"}<br><strong>Data:</strong> ${format(new Date(date), "d MMMM yyyy", { locale: sq })}<br><strong>Vendndodhja:</strong> ${location || "Nuk është specifikuar"}<br><strong>Kategoria:</strong> ${category}</p><p>Shpresojmë të shihemi atje!</p><p>Ekipi UniEvents</p>`,
+            text: `Përshëndetje ${user.name},\n\nKemi një event të ri në UniEvents!\n\nTitulli: ${title}\nPërshkrimi: ${description || "Nuk ka përshkrim"}\nData: ${format(new Date(normalizedDate), "d MMMM yyyy, HH:mm", { locale: sq })}\nVendndodhja: ${location || "Nuk është specifikuar"}\nKategoria: ${category}\n\nShpresojmë të shihemi atje!\nEkipi UniEvents`,
+            html: `<h1>Event i Ri: ${title}</h1><p>Përshëndetje ${user.name},</p><p>Kemi një event të ri në UniEvents!</p><p><strong>Titulli:</strong> ${title}<br><strong>Përshkrimi:</strong> ${description || "Nuk ka përshkrim"}<br><strong>Data:</strong> ${format(new Date(normalizedDate), "d MMMM yyyy, HH:mm", { locale: sq })}<br><strong>Vendndodhja:</strong> ${location || "Nuk është specifikuar"}<br><strong>Kategoria:</strong> ${category}</p><p>Shpresojmë të shihemi atje!</p><p>Ekipi UniEvents</p>`,
           });
           console.log(`Email u dërgua me sukses te: ${user.email}`);
         } catch (emailError) {
@@ -123,7 +126,14 @@ export async function POST(req: Request) {
     // Popullo organizatorin për përgjigjen
     const populatedEvent = await Events.findById(newEvent._id).populate("organizer", "name");
 
-    return NextResponse.json(populatedEvent, { status: 201, headers: corsHeaders });
+    // Kthe datën në UTC
+    const responseEvent = {
+      ...populatedEvent.toObject(),
+      date: populatedEvent.date.toISOString(),
+      imageUrl: populatedEvent.image || null,
+    };
+
+    return NextResponse.json(responseEvent, { status: 201, headers: corsHeaders });
   } catch (error) {
     console.error("Gabim gjatë krijimit të eventit:", error);
     return NextResponse.json(
@@ -145,7 +155,8 @@ export async function GET(request: Request) {
     const eventsWithImageUrls = events.map((event) => {
       return {
         ...event.toObject(),
-        imageUrl: event.image || null, // Përdor URL-në e Cloudinary ose URL-në e dhënë
+        imageUrl: event.image || null,
+        date: event.date.toISOString(), // Kthe datën në UTC
       };
     });
 

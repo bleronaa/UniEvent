@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation"; // Shto useRouter
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -13,12 +14,27 @@ import { Calendar, LogIn, LogOut, UserPlus, UserCircle, Menu, X } from "lucide-r
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"; // Korrigjo importimin
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { toast } from "sonner"; // Shto sonner për mesazhe
 
 export function Navbar() {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter(); // Inicializo useRouter
+
+  // Funksion për të trajtuar logout-in
+  const handleLogout = async () => {
+    try {
+      await logout(); // Thirr logout nga useAuth
+      toast.success("U çkyçe me sukses");
+      router.push("/login"); // Ridrejto në /login
+      setIsOpen(false); // Mbyll menynë mobile (nëse është e hapur)
+    } catch (error) {
+      console.error("Gabim gjatë logout-it:", error);
+      toast.error("Dështoi çkyçja, provo përsëri");
+    }
+  };
 
   return (
     <div className="border-b bg-white shadow-sm">
@@ -75,10 +91,9 @@ export function Navbar() {
                       <span className="text-sm">{user.name}</span>
                     </Link>
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => logout()}>
+                  <Button variant="outline" size="sm" onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
-                    <Link href="/#logout">Dil</Link>
-                    
+                    Dil
                   </Button>
                 </>
               ) : (
@@ -152,10 +167,7 @@ export function Navbar() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            logout();
-                            setIsOpen(false);
-                          }}
+                          onClick={handleLogout}
                           className="w-full justify-start py-2 text-sm sm:text-base"
                         >
                           <LogOut className="h-4 w-4 mr-2" />

@@ -6,11 +6,11 @@ import type { IEvent } from "@/types/event";
 import User from "../../models/User";
 
 // Lejo të gjitha originat
-const allowedOrigin = "*"; // Lejon të gjitha originat
+const allowedOrigin = "*";
 
 // Headers të përbashkët për CORS
 const corsHeaders = {
-  "Access-Control-Allow-Origin": allowedOrigin, // Lejo të gjitha originat
+  "Access-Control-Allow-Origin": allowedOrigin,
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
@@ -43,10 +43,11 @@ export async function GET(
       );
     }
 
-    // Transformo `image` në `imageUrl` për konsistencë
+    // Transformo `image` në `imageUrl` dhe sigurohu që data është në UTC
     const eventWithImageUrl = {
       ...event.toObject(),
       imageUrl: event.image || null,
+      date: event.date.toISOString(), // Kthe datën në UTC
     };
 
     return NextResponse.json(eventWithImageUrl, { headers: corsHeaders });
@@ -84,17 +85,23 @@ export async function PUT(
       );
     }
 
-    // Kontrollo autorizimin (nëse nevojitet)
-    // if (event.organizer.toString() !== userId) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403, headers: corsHeaders });
-    // }
+    // Normalizo datën në UTC nëse ekziston
+    if (data.date) {
+      data.date = new Date(data.date).toISOString();
+    }
 
     // Përditëso eventin me të dhënat e reja
     const updatedEvent = await Event.findByIdAndUpdate(params.id, data, {
       new: true,
     }).populate("organizer", "name");
 
-    return NextResponse.json(updatedEvent, { headers: corsHeaders });
+    // Sigurohu që data kthehet në UTC
+    const updatedEventWithUTC = {
+      ...updatedEvent.toObject(),
+      date: updatedEvent.date.toISOString(),
+    };
+
+    return NextResponse.json(updatedEventWithUTC, { headers: corsHeaders });
   } catch (error) {
     console.error("Error updating event:", error);
     return NextResponse.json(
@@ -127,11 +134,6 @@ export async function DELETE(
         { status: 404, headers: corsHeaders }
       );
     }
-
-    // Kontrollo autorizimin (nëse nevojitet)
-    // if (event.organizer.toString() !== userId) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403, headers: corsHeaders });
-    // }
 
     await Event.findByIdAndDelete(params.id);
 
