@@ -201,7 +201,7 @@ export default function CreateEventPage() {
                   onChange={handleInputChange}
                 >
                   <option value="">-- Zgjidh kategorinë --</option>
-                  <option value="Inxh.Kompjuterike">_tx.Inxh.Kompjuterike</option>
+                  <option value="Inxh.Kompjuterike">Inxh.Kompjuterike</option>
                   <option value="Inxh.Mekanike">Inxh.Mekanike</option>
                 </select>
                 {errors.category && (
